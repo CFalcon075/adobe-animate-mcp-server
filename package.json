@@ -1,0 +1,37 @@
+{
+  "name": "adobe-animate-mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for Adobe Animate - allows AI to control and automate Adobe Animate",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "adobe-animate-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "adobe-animate",
+    "animation",
+    "automation",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
