@@ -459,6 +459,14 @@ export class AnimateTools {
       },
     },
     {
+      name: "get_actionscript_info",
+      description: "Get ActionScript version, document class, source/class paths, publish profile, and AS2/AS3 capability warnings",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
       name: "select_all",
       description: "Select all elements on the current frame",
       inputSchema: {
@@ -490,13 +498,18 @@ export class AnimateTools {
     },
     {
       name: "add_actionscript_to_frame",
-      description: "Add ActionScript 3.0 code to a specific frame on the timeline",
+      description: "Add ActionScript 2.0 or 3.0 code to a specific frame on the timeline",
       inputSchema: {
         type: "object",
         properties: {
           code: {
             type: "string",
-            description: "ActionScript 3.0 code to add to the frame",
+            description: "ActionScript code to add to the frame",
+          },
+          scriptVersion: {
+            type: "string",
+            description: "ActionScript version: 'as2', 'as3', or 'auto'",
+            default: "auto",
           },
           frameNumber: {
             type: "number",
@@ -512,13 +525,18 @@ export class AnimateTools {
     },
     {
       name: "add_actionscript_to_instance",
-      description: "Add ActionScript 3.0 code to a selected movie clip or button instance",
+      description: "Add ActionScript 2.0 or 3.0 code to a selected movie clip or button instance",
       inputSchema: {
         type: "object",
         properties: {
           code: {
             type: "string",
-            description: "ActionScript 3.0 code to add to the instance",
+            description: "ActionScript code to add to the instance",
+          },
+          scriptVersion: {
+            type: "string",
+            description: "ActionScript version: 'as2', 'as3', or 'auto'",
+            default: "auto",
           },
           instanceName: {
             type: "string",
@@ -526,6 +544,20 @@ export class AnimateTools {
           },
         },
         required: ["code"],
+      },
+    },
+    {
+      name: "set_actionscript_version",
+      description: "Attempt to set the document ActionScript version to AS2 or AS3 using safe exposed JSFL properties",
+      inputSchema: {
+        type: "object",
+        properties: {
+          scriptVersion: {
+            type: "string",
+            description: "Target ActionScript version: 'as2' or 'as3'",
+          },
+        },
+        required: ["scriptVersion"],
       },
     },
     {
@@ -540,6 +572,234 @@ export class AnimateTools {
           },
         },
         required: ["className"],
+      },
+    },
+    {
+      name: "add_as2_keyboard_controls",
+      description: "Add AS2 keyboard movement controls for a named player instance",
+      inputSchema: {
+        type: "object",
+        properties: {
+          playerInstanceName: {
+            type: "string",
+            description: "AS2 instance name to move",
+            default: "player",
+          },
+          speed: {
+            type: "number",
+            description: "Movement speed in pixels per frame",
+            default: 6,
+          },
+          frameNumber: {
+            type: "number",
+            description: "Frame number where to add the code",
+          },
+          layerIndex: {
+            type: "number",
+            description: "Layer index where to add the code",
+          },
+        },
+      },
+    },
+    {
+      name: "add_as2_button_handler",
+      description: "Add an AS2 button event handler that navigates to a target frame",
+      inputSchema: {
+        type: "object",
+        properties: {
+          buttonInstanceName: {
+            type: "string",
+            description: "Button or movie clip instance name",
+          },
+          eventName: {
+            type: "string",
+            description: "AS2 handler property such as 'onRelease', 'onPress', or 'onRollOver'",
+            default: "onRelease",
+          },
+          targetFrame: {
+            type: "number",
+            description: "Target frame number, 1-based",
+          },
+          playMode: {
+            type: "string",
+            description: "'play' for gotoAndPlay or 'stop' for gotoAndStop",
+            default: "play",
+          },
+          frameNumber: {
+            type: "number",
+            description: "Timeline frame where to add the handler",
+          },
+          layerIndex: {
+            type: "number",
+            description: "Timeline layer where to add the handler",
+          },
+        },
+        required: ["buttonInstanceName", "targetFrame"],
+      },
+    },
+    {
+      name: "add_as2_frame_loop",
+      description: "Add an AS2 onEnterFrame loop with a custom body",
+      inputSchema: {
+        type: "object",
+        properties: {
+          body: {
+            type: "string",
+            description: "Code to run inside the onEnterFrame function",
+            default: "trace('AS2 frame loop tick');",
+          },
+          frameNumber: {
+            type: "number",
+            description: "Timeline frame where to add the loop",
+          },
+          layerIndex: {
+            type: "number",
+            description: "Timeline layer where to add the loop",
+          },
+        },
+      },
+    },
+    {
+      name: "add_as3_keyboard_controls",
+      description: "Add AS3 keyboard movement controls for a named player instance",
+      inputSchema: {
+        type: "object",
+        properties: {
+          playerInstanceName: {
+            type: "string",
+            description: "AS3 instance name to move",
+            default: "player",
+          },
+          speed: {
+            type: "number",
+            description: "Movement speed in pixels per key press",
+            default: 6,
+          },
+          frameNumber: {
+            type: "number",
+            description: "Frame number where to add the code",
+          },
+          layerIndex: {
+            type: "number",
+            description: "Layer index where to add the code",
+          },
+        },
+      },
+    },
+    {
+      name: "add_as3_button_handler",
+      description: "Add an AS3 MouseEvent.CLICK button handler that navigates to a target frame",
+      inputSchema: {
+        type: "object",
+        properties: {
+          buttonInstanceName: {
+            type: "string",
+            description: "Button or movie clip instance name",
+          },
+          targetFrame: {
+            type: "number",
+            description: "Target frame number, 1-based",
+          },
+          playMode: {
+            type: "string",
+            description: "'play' for gotoAndPlay or 'stop' for gotoAndStop",
+            default: "play",
+          },
+          frameNumber: {
+            type: "number",
+            description: "Timeline frame where to add the handler",
+          },
+          layerIndex: {
+            type: "number",
+            description: "Timeline layer where to add the handler",
+          },
+        },
+        required: ["buttonInstanceName", "targetFrame"],
+      },
+    },
+    {
+      name: "add_as3_document_class_stub",
+      description: "Create an AS3 document class stub beside the FLA and set it as the document class",
+      inputSchema: {
+        type: "object",
+        properties: {
+          className: {
+            type: "string",
+            description: "Document class name",
+            default: "Main",
+          },
+          packageName: {
+            type: "string",
+            description: "Optional AS3 package name",
+            default: "",
+          },
+          directory: {
+            type: "string",
+            description: "Optional output directory. Defaults to the FLA directory.",
+          },
+          overwrite: {
+            type: "boolean",
+            description: "Overwrite the file if it already exists",
+            default: false,
+          },
+        },
+      },
+    },
+    {
+      name: "create_actionscript_file",
+      description: "Create an external AS2 or AS3 .as file beside the FLA or in a provided folder",
+      inputSchema: {
+        type: "object",
+        properties: {
+          scriptVersion: {
+            type: "string",
+            description: "ActionScript version: 'as2' or 'as3'",
+            default: "as3",
+          },
+          className: {
+            type: "string",
+            description: "Class/file base name",
+            default: "Main",
+          },
+          packageName: {
+            type: "string",
+            description: "Optional package name for AS3 or dotted class path for AS2",
+            default: "",
+          },
+          directory: {
+            type: "string",
+            description: "Optional output directory. Defaults to the FLA directory.",
+          },
+          fileName: {
+            type: "string",
+            description: "Optional explicit file name ending in .as",
+          },
+          code: {
+            type: "string",
+            description: "Optional full ActionScript source code. If omitted, a version-specific class stub is generated.",
+          },
+          overwrite: {
+            type: "boolean",
+            description: "Overwrite the file if it already exists",
+            default: false,
+          },
+        },
+      },
+    },
+    {
+      name: "scan_actionscript_usage",
+      description: "Scan frames and symbol instances for ActionScript and classify likely AS2/AS3 syntax",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "test_movie_and_report",
+      description: "Test the movie and return ActionScript/project metadata with guidance for compiler output",
+      inputSchema: {
+        type: "object",
+        properties: {},
       },
     },
     {
@@ -651,7 +911,7 @@ export class AnimateTools {
     },
     {
       name: "add_actionscript_to_symbol_by_name",
-      description: "Add ActionScript 3.0 code to a symbol instance by finding it by name on the stage",
+      description: "Add ActionScript 2.0 or 3.0 code to a symbol instance by finding it by name on the stage",
       inputSchema: {
         type: "object",
         properties: {
@@ -661,7 +921,12 @@ export class AnimateTools {
           },
           code: {
             type: "string",
-            description: "ActionScript 3.0 code to add",
+            description: "ActionScript code to add",
+          },
+          scriptVersion: {
+            type: "string",
+            description: "ActionScript version: 'as2', 'as3', or 'auto'",
+            default: "auto",
           },
         },
         required: ["instanceName", "code"],
@@ -715,6 +980,8 @@ export class AnimateTools {
         return this.jsfl_getDocumentInfo(args);
       case "get_project_info":
         return this.jsfl_getProjectInfo(args);
+      case "get_actionscript_info":
+        return this.jsfl_getActionScriptInfo(args);
       case "select_all":
         return this.jsfl_selectAll(args);
       case "delete_selection":
@@ -725,8 +992,28 @@ export class AnimateTools {
         return this.jsfl_addActionScriptToFrame(args);
       case "add_actionscript_to_instance":
         return this.jsfl_addActionScriptToInstance(args);
+      case "set_actionscript_version":
+        return this.jsfl_setActionScriptVersion(args);
       case "set_document_class":
         return this.jsfl_setDocumentClass(args);
+      case "add_as2_keyboard_controls":
+        return this.jsfl_addAS2KeyboardControls(args);
+      case "add_as2_button_handler":
+        return this.jsfl_addAS2ButtonHandler(args);
+      case "add_as2_frame_loop":
+        return this.jsfl_addAS2FrameLoop(args);
+      case "add_as3_keyboard_controls":
+        return this.jsfl_addAS3KeyboardControls(args);
+      case "add_as3_button_handler":
+        return this.jsfl_addAS3ButtonHandler(args);
+      case "add_as3_document_class_stub":
+        return this.jsfl_addAS3DocumentClassStub(args);
+      case "create_actionscript_file":
+        return this.jsfl_createActionScriptFile(args);
+      case "scan_actionscript_usage":
+        return this.jsfl_scanActionScriptUsage(args);
+      case "test_movie_and_report":
+        return this.jsfl_testMovieAndReport(args);
       case "add_stop_action":
         return this.jsfl_addStopAction(args);
       case "add_gotoAndPlay_action":
@@ -1705,100 +1992,658 @@ JSON.stringify = function(obj) {
 `;
   }
 
-  // ActionScript 3.0 Support Methods
+  private getActionScriptHelpers(): string {
+    return String.raw`
+function normalizeScriptVersion(version) {
+  var normalized = String(version || "auto").toLowerCase();
+  if (normalized === "2" || normalized === "as2" || normalized === "actionscript2" || normalized === "actionscript 2.0") {
+    return "as2";
+  }
+  if (normalized === "3" || normalized === "as3" || normalized === "actionscript3" || normalized === "actionscript 3.0") {
+    return "as3";
+  }
+  return "auto";
+}
+
+function classifyActionScriptCode(code) {
+  var source = String(code || "");
+  var as2Score = 0;
+  var as3Score = 0;
+  var signals = [];
+
+  if (source.match(/\b_root\b|\b_level\d+\b|\bonEnterFrame\b|\bonRelease\b|\bonPress\b|\bKey\.isDown\b|_\w+/)) {
+    as2Score += 2;
+    signals.push("AS2-style globals/properties");
+  }
+  if (source.match(/\bimport\s+flash\.|\baddEventListener\b|\bMouseEvent\b|\bKeyboardEvent\b|:\s*(void|int|Number|String|Boolean)\b|\bpackage\s*\{/)) {
+    as3Score += 2;
+    signals.push("AS3 events/types/packages");
+  }
+  if (source.match(/\bclass\s+[\w.]+\s*\{/)) {
+    as2Score += 1;
+    signals.push("class declaration");
+  }
+  if (source.match(/\bfunction\s+\w+\s*\([^)]*\)\s*:\s*\w+/)) {
+    as3Score += 1;
+    signals.push("typed function signature");
+  }
+
+  var likelyVersion = "unknown";
+  if (as2Score > as3Score) {
+    likelyVersion = "as2";
+  } else if (as3Score > as2Score) {
+    likelyVersion = "as3";
+  } else if (source.length > 0) {
+    likelyVersion = "ambiguous";
+  }
+
+  return {
+    likelyVersion: likelyVersion,
+    as2Score: as2Score,
+    as3Score: as3Score,
+    signals: signals
+  };
+}
+
+function safeGetProperty(obj, propertyName) {
+  try {
+    var value = obj[propertyName];
+    if (typeof value === "undefined") {
+      return null;
+    }
+    return value;
+  } catch (error) {
+    return null;
+  }
+}
+
+function getActionScriptInfo(doc) {
+  var asVersion = safeGetProperty(doc, "asVersion");
+  var normalizedDocumentVersion = asVersion === 2 ? "as2" : (asVersion === 3 ? "as3" : "unknown");
+  var warnings = [];
+
+  if (normalizedDocumentVersion !== "as2") {
+    warnings.push("ActionScript 2.0 is legacy/deprecated and may not compile in modern Adobe Animate. The MCP can insert/manage AS2 code, but compilation depends on the host app and document publish settings.");
+  }
+
+  return {
+    documentName: doc.name || "",
+    documentType: safeGetProperty(doc, "type"),
+    path: doc.path || "",
+    asVersion: asVersion,
+    normalizedDocumentVersion: normalizedDocumentVersion,
+    documentClass: safeGetProperty(doc, "docClass") || "",
+    sourcePath: safeGetProperty(doc, "sourcePath"),
+    classPath: safeGetProperty(doc, "classPath"),
+    currentPublishProfile: safeGetProperty(doc, "currentPublishProfile"),
+    publishProfiles: safeGetProperty(doc, "publishProfiles"),
+    supportsAS3DocumentClass: true,
+    as2CompileSupport: normalizedDocumentVersion === "as2" ? "document-reports-as2" : "not-confirmed",
+    warnings: warnings
+  };
+}
+
+function getVersionWarnings(requestedVersion, info, code) {
+  var warnings = [];
+  var scriptVersion = normalizeScriptVersion(requestedVersion);
+  var syntax = classifyActionScriptCode(code || "");
+
+  if (scriptVersion === "auto") {
+    scriptVersion = syntax.likelyVersion === "unknown" || syntax.likelyVersion === "ambiguous"
+      ? (info.normalizedDocumentVersion === "unknown" ? "as3" : info.normalizedDocumentVersion)
+      : syntax.likelyVersion;
+  }
+
+  if (scriptVersion === "as2" && info.normalizedDocumentVersion !== "as2") {
+    warnings.push("AS2 code was inserted, but this document/app does not report AS2 compile support. Modern Adobe Animate may not compile AS2.");
+  }
+  if (scriptVersion === "as3" && info.normalizedDocumentVersion === "as2") {
+    warnings.push("AS3 code was inserted into a document that reports AS2 publish settings.");
+  }
+  if (syntax.likelyVersion !== "unknown" && syntax.likelyVersion !== "ambiguous" && syntax.likelyVersion !== scriptVersion) {
+    warnings.push("Code syntax looks like " + syntax.likelyVersion + " but requested version is " + scriptVersion + ".");
+  }
+
+  return {
+    requestedVersion: requestedVersion || "auto",
+    resolvedVersion: scriptVersion,
+    syntax: syntax,
+    warnings: warnings
+  };
+}
+
+function findTimelineFrame(layer, frameIdx) {
+  if (!layer || !layer.frames) {
+    return null;
+  }
+
+  for (var i = 0; i < layer.frames.length; i++) {
+    if (layer.frames[i].startFrame <= frameIdx &&
+        (i + 1 >= layer.frames.length || layer.frames[i + 1].startFrame > frameIdx)) {
+      return layer.frames[i];
+    }
+  }
+
+  return null;
+}
+
+function getPathDirectory(path) {
+  if (!path) {
+    return "";
+  }
+  var normalized = String(path).replace(/\\/g, "/");
+  var slashIndex = normalized.lastIndexOf("/");
+  return slashIndex >= 0 ? normalized.substring(0, slashIndex) : "";
+}
+
+function pathToFileURI(path) {
+  var normalized = String(path || "").replace(/\\/g, "/");
+  if (normalized.match(/^[A-Za-z]:\//)) {
+    return "file:///" + normalized;
+  }
+  if (normalized.indexOf("file:///") === 0) {
+    return normalized;
+  }
+  if (normalized.charAt(0) === "/") {
+    return "file://" + normalized;
+  }
+  return normalized;
+}
+
+function joinPath(directory, fileName) {
+  var normalized = String(directory || "").replace(/\\/g, "/");
+  if (normalized.charAt(normalized.length - 1) !== "/") {
+    normalized += "/";
+  }
+  return normalized + fileName;
+}
+
+function ensureFolderPath(directory) {
+  if (!directory) {
+    return false;
+  }
+  var normalized = String(directory).replace(/\\/g, "/");
+  var parts = normalized.split("/");
+  var current = "";
+
+  for (var i = 0; i < parts.length; i++) {
+    if (!parts[i]) {
+      continue;
+    }
+    if (i === 0 && parts[i].match(/^[A-Za-z]:$/)) {
+      current = parts[i];
+      continue;
+    }
+    current = current ? current + "/" + parts[i] : parts[i];
+    var uri = pathToFileURI(current);
+    if (!FLfile.exists(uri)) {
+      FLfile.createFolder(uri);
+    }
+  }
+
+  return true;
+}
+
+function writeActionScriptResult(results) {
+  fl.outputPanel.clear();
+  fl.outputPanel.trace(JSON.stringify(results.data || results.error, null, 2));
+  var outputPath = "%%OUTPUT_FILE%%";
+  FLfile.write(outputPath, JSON.stringify(results));
+}
+`;
+  }
+
+  private buildAddActionScriptToFrameJSFL(code: string, scriptVersion: string, frameNumber: any, layerIndex: any): string {
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+var code = ${JSON.stringify(code)};
+var requestedVersion = ${JSON.stringify(scriptVersion)};
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var frameIdx = ${frameNumber};
+  var layerIdx = ${layerIndex};
+  var info = getActionScriptInfo(doc);
+  var versionResult = getVersionWarnings(requestedVersion, info, code);
+
+  if (layerIdx < 0 || layerIdx >= timeline.layerCount) {
+    results.error = "Layer index " + layerIdx + " is out of range";
+  } else {
+    timeline.currentLayer = layerIdx;
+    var layer = timeline.layers[layerIdx];
+    var targetFrame = findTimelineFrame(layer, frameIdx);
+
+    if (targetFrame) {
+      targetFrame.actionScript = code;
+      results.success = true;
+      results.data = {
+        action: "add_actionscript_to_frame",
+        scriptVersion: versionResult.resolvedVersion,
+        requestedVersion: versionResult.requestedVersion,
+        syntax: versionResult.syntax,
+        warnings: versionResult.warnings,
+        layerIndex: layerIdx,
+        layerName: layer.name,
+        frameNumber: frameIdx,
+        codeLength: code.length,
+        document: info
+      };
+    } else {
+      results.error = "Could not find frame at index " + frameIdx;
+    }
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeActionScriptResult(results);
+`;
+  }
+
+  // ActionScript 2.0 and 3.0 Support Methods
+
+  private jsfl_getActionScriptInfo(args: Record<string, any>): string {
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  results.success = true;
+  results.data = getActionScriptInfo(doc);
+} else {
+  results.error = "No document is open";
+}
+
+writeActionScriptResult(results);
+`;
+  }
 
   private jsfl_addActionScriptToFrame(args: Record<string, any>): string {
     const code = args.code;
     const frameNumber = args.frameNumber !== undefined ? args.frameNumber : "timeline.currentFrame";
     const layerIndex = args.layerIndex !== undefined ? args.layerIndex : "timeline.currentLayer";
+    const scriptVersion = args.scriptVersion || "auto";
 
-    return `
-var doc = fl.getDocumentDOM();
-if (doc) {
-  var timeline = doc.getTimeline();
-  var frameIdx = ${frameNumber};
-  var layerIdx = ${layerIndex};
-  
-  timeline.currentLayer = layerIdx;
-  var layer = timeline.layers[layerIdx];
-  
-  // Find the frame at the specified index
-  var frameArray = layer.frames;
-  var targetFrame = null;
-  
-  for (var i = 0; i < frameArray.length; i++) {
-    if (frameArray[i].startFrame <= frameIdx && 
-        (i + 1 >= frameArray.length || frameArray[i + 1].startFrame > frameIdx)) {
-      targetFrame = frameArray[i];
-      break;
-    }
-  }
-  
-  if (targetFrame) {
-    targetFrame.actionScript = ${JSON.stringify(code)};
-    fl.outputPanel.clear();
-    fl.outputPanel.trace("Added ActionScript to frame " + frameIdx + " on layer " + layerIdx);
-  } else {
-    fl.outputPanel.clear();
-    fl.outputPanel.trace("Error: Could not find frame at index " + frameIdx);
-  }
-} else {
-  fl.outputPanel.clear();
-  fl.outputPanel.trace("Error: No document is open");
-}
-`;
+    return this.buildAddActionScriptToFrameJSFL(code, scriptVersion, frameNumber, layerIndex);
   }
 
   private jsfl_addActionScriptToInstance(args: Record<string, any>): string {
     const code = args.code;
     const instanceName = args.instanceName || "";
+    const scriptVersion = args.scriptVersion || "auto";
 
-    return `
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
 var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+var code = ${JSON.stringify(code)};
+var requestedVersion = ${JSON.stringify(scriptVersion)};
+
 if (doc) {
+  var info = getActionScriptInfo(doc);
+  var versionResult = getVersionWarnings(requestedVersion, info, code);
+
   if (doc.selection.length > 0) {
     var instance = doc.selection[0];
-    
+
     // Set instance name if provided
     if ("${instanceName}" !== "") {
       instance.name = "${instanceName}";
     }
-    
+
     // Add ActionScript to the instance
     if (instance.elementType === "instance") {
       // For movie clips and buttons, add script
-      instance.actionScript = ${JSON.stringify(code)};
-      fl.outputPanel.clear();
-      fl.outputPanel.trace("Added ActionScript to instance: " + (instance.name || "unnamed"));
+      instance.actionScript = code;
+      results.success = true;
+      results.data = {
+        action: "add_actionscript_to_instance",
+        instanceName: instance.name || "unnamed",
+        scriptVersion: versionResult.resolvedVersion,
+        requestedVersion: versionResult.requestedVersion,
+        syntax: versionResult.syntax,
+        warnings: versionResult.warnings,
+        codeLength: code.length,
+        document: info
+      };
     } else {
-      fl.outputPanel.clear();
-      fl.outputPanel.trace("Error: Selected element is not a symbol instance");
+      results.error = "Selected element is not a symbol instance";
     }
   } else {
-    fl.outputPanel.clear();
-    fl.outputPanel.trace("Error: No element selected. Please select a movie clip or button instance.");
+    results.error = "No element selected. Please select a movie clip or button instance.";
   }
 } else {
-  fl.outputPanel.clear();
-  fl.outputPanel.trace("Error: No document is open");
+  results.error = "No document is open";
 }
+
+writeActionScriptResult(results);
+`;
+  }
+
+  private jsfl_setActionScriptVersion(args: Record<string, any>): string {
+    const scriptVersion = args.scriptVersion;
+
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+var requestedVersion = normalizeScriptVersion(${JSON.stringify(scriptVersion)});
+
+if (doc) {
+  var before = getActionScriptInfo(doc);
+  var targetNumber = requestedVersion === "as2" ? 2 : 3;
+  var warnings = [];
+
+  if (requestedVersion !== "as2" && requestedVersion !== "as3") {
+    results.error = "scriptVersion must be 'as2' or 'as3'";
+  } else {
+    try {
+      doc.asVersion = targetNumber;
+    } catch (error) {
+      warnings.push("Could not set doc.asVersion directly: " + String(error));
+    }
+
+    var after = getActionScriptInfo(doc);
+    if (requestedVersion === "as2" && after.normalizedDocumentVersion !== "as2") {
+      warnings.push("The document did not report AS2 after the change. Modern Adobe Animate may not support compiling AS2; use a legacy Flash/Animate host for full AS2 compilation.");
+    }
+
+    results.success = after.normalizedDocumentVersion === requestedVersion;
+    results.data = {
+      requestedVersion: requestedVersion,
+      before: before,
+      after: after,
+      warnings: warnings,
+      manualFallback: "If the version did not change, open File > Publish Settings and choose the ActionScript version manually in a host that supports it."
+    };
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeActionScriptResult(results);
 `;
   }
 
   private jsfl_setDocumentClass(args: Record<string, any>): string {
     const className = args.className;
 
-    return `
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
 var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
 if (doc) {
   doc.docClass = "${className}";
-  fl.outputPanel.clear();
-  fl.outputPanel.trace("Set document class to: ${className}");
-  fl.outputPanel.trace("Note: Make sure to create a ${className}.as file in your project directory");
+  var info = getActionScriptInfo(doc);
+  results.success = true;
+  results.data = {
+    action: "set_document_class",
+    className: "${className}",
+    scriptVersion: "as3",
+    warnings: info.normalizedDocumentVersion === "as2" ? ["Document reports AS2; document classes are AS3-only."] : [],
+    document: info,
+    note: "Make sure to create a ${className}.as file in your project directory or use add_as3_document_class_stub."
+  };
 } else {
-  fl.outputPanel.clear();
-  fl.outputPanel.trace("Error: No document is open");
+  results.error = "No document is open";
 }
+
+writeActionScriptResult(results);
+`;
+  }
+
+  private jsfl_addAS2KeyboardControls(args: Record<string, any>): string {
+    const player = args.playerInstanceName || "player";
+    const speed = args.speed || 6;
+    const frameNumber = args.frameNumber !== undefined ? args.frameNumber : "timeline.currentFrame";
+    const layerIndex = args.layerIndex !== undefined ? args.layerIndex : "timeline.currentLayer";
+    const code = `// AS2 keyboard controls for ${player}
+var moveSpeed:Number = ${speed};
+
+this.onEnterFrame = function() {
+  if (Key.isDown(Key.LEFT)) {
+    ${player}._x -= moveSpeed;
+  }
+  if (Key.isDown(Key.RIGHT)) {
+    ${player}._x += moveSpeed;
+  }
+  if (Key.isDown(Key.UP)) {
+    ${player}._y -= moveSpeed;
+  }
+  if (Key.isDown(Key.DOWN)) {
+    ${player}._y += moveSpeed;
+  }
+};`;
+
+    return this.buildAddActionScriptToFrameJSFL(code, "as2", frameNumber, layerIndex);
+  }
+
+  private jsfl_addAS2ButtonHandler(args: Record<string, any>): string {
+    const button = args.buttonInstanceName;
+    const targetFrame = args.targetFrame;
+    const eventName = args.eventName || "onRelease";
+    const playMode = args.playMode === "stop" ? "gotoAndStop" : "gotoAndPlay";
+    const frameNumber = args.frameNumber !== undefined ? args.frameNumber : "timeline.currentFrame";
+    const layerIndex = args.layerIndex !== undefined ? args.layerIndex : "timeline.currentLayer";
+    const code = `// AS2 button handler for ${button}
+${button}.${eventName} = function() {
+  ${playMode}(${targetFrame});
+};`;
+
+    return this.buildAddActionScriptToFrameJSFL(code, "as2", frameNumber, layerIndex);
+  }
+
+  private jsfl_addAS2FrameLoop(args: Record<string, any>): string {
+    const body = args.body || "trace('AS2 frame loop tick');";
+    const frameNumber = args.frameNumber !== undefined ? args.frameNumber : "timeline.currentFrame";
+    const layerIndex = args.layerIndex !== undefined ? args.layerIndex : "timeline.currentLayer";
+    const code = `// AS2 frame loop
+this.onEnterFrame = function() {
+${body.split("\n").map((line: string) => `  ${line}`).join("\n")}
+};`;
+
+    return this.buildAddActionScriptToFrameJSFL(code, "as2", frameNumber, layerIndex);
+  }
+
+  private jsfl_addAS3KeyboardControls(args: Record<string, any>): string {
+    const player = args.playerInstanceName || "player";
+    const speed = args.speed || 6;
+    const frameNumber = args.frameNumber !== undefined ? args.frameNumber : "timeline.currentFrame";
+    const layerIndex = args.layerIndex !== undefined ? args.layerIndex : "timeline.currentLayer";
+    const code = `// AS3 keyboard controls for ${player}
+import flash.events.KeyboardEvent;
+import flash.ui.Keyboard;
+
+stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+
+function onKeyDown(event:KeyboardEvent):void {
+  if (event.keyCode == Keyboard.LEFT) {
+    ${player}.x -= ${speed};
+  } else if (event.keyCode == Keyboard.RIGHT) {
+    ${player}.x += ${speed};
+  } else if (event.keyCode == Keyboard.UP) {
+    ${player}.y -= ${speed};
+  } else if (event.keyCode == Keyboard.DOWN) {
+    ${player}.y += ${speed};
+  }
+}`;
+
+    return this.buildAddActionScriptToFrameJSFL(code, "as3", frameNumber, layerIndex);
+  }
+
+  private jsfl_addAS3ButtonHandler(args: Record<string, any>): string {
+    const button = args.buttonInstanceName;
+    const targetFrame = args.targetFrame;
+    const playMode = args.playMode === "stop" ? "gotoAndStop" : "gotoAndPlay";
+    const frameNumber = args.frameNumber !== undefined ? args.frameNumber : "timeline.currentFrame";
+    const layerIndex = args.layerIndex !== undefined ? args.layerIndex : "timeline.currentLayer";
+    const handlerName = `${button.replace(/[^A-Za-z0-9_]/g, "_")}ClickHandler`;
+    const code = `// AS3 button handler for ${button}
+import flash.events.MouseEvent;
+
+${button}.addEventListener(MouseEvent.CLICK, ${handlerName});
+
+function ${handlerName}(event:MouseEvent):void {
+  ${playMode}(${targetFrame});
+}`;
+
+    return this.buildAddActionScriptToFrameJSFL(code, "as3", frameNumber, layerIndex);
+  }
+
+  private generateAS3ClassCode(className: string, packageName = ""): string {
+    const packageLine = packageName ? `package ${packageName} {` : "package {";
+    return `${packageLine}
+  import flash.display.MovieClip;
+
+  public class ${className} extends MovieClip {
+    public function ${className}() {
+      trace("${className} initialized");
+    }
+  }
+}`;
+  }
+
+  private generateAS2ClassCode(className: string, packageName = ""): string {
+    const qualifiedName = packageName ? `${packageName}.${className}` : className;
+    return `class ${qualifiedName} {
+  public function ${className}() {
+    trace("${qualifiedName} initialized");
+  }
+}`;
+  }
+
+  private jsfl_createActionScriptFile(args: Record<string, any>): string {
+    const scriptVersion = (args.scriptVersion || "as3").toLowerCase() === "as2" ? "as2" : "as3";
+    const className = args.className || "Main";
+    const packageName = args.packageName || "";
+    const fileName = args.fileName || `${className}.as`;
+    const code = args.code || (scriptVersion === "as2"
+      ? this.generateAS2ClassCode(className, packageName)
+      : this.generateAS3ClassCode(className, packageName));
+    const directory = args.directory || "";
+    const overwrite = args.overwrite === true;
+
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+var requestedDirectory = ${JSON.stringify(directory)};
+var fileName = ${JSON.stringify(fileName)};
+var code = ${JSON.stringify(code)};
+var overwrite = ${overwrite};
+var scriptVersion = ${JSON.stringify(scriptVersion)};
+var packageName = ${JSON.stringify(packageName)};
+
+if (doc) {
+  var info = getActionScriptInfo(doc);
+  var baseDirectory = requestedDirectory || getPathDirectory(doc.path);
+
+  if (!baseDirectory) {
+    results.error = "No output directory was provided and the current document has not been saved yet.";
+  } else {
+    if (scriptVersion === "as3" && packageName) {
+      baseDirectory = joinPath(baseDirectory, packageName.replace(/\./g, "/"));
+    }
+
+    ensureFolderPath(baseDirectory);
+    var outputPath = joinPath(baseDirectory, fileName);
+    var outputURI = pathToFileURI(outputPath);
+
+    if (FLfile.exists(outputURI) && !overwrite) {
+      results.error = "ActionScript file already exists: " + outputPath;
+      results.data = { outputPath: outputPath, overwriteRequired: true };
+    } else {
+      var wrote = FLfile.write(outputURI, code);
+      results.success = !!wrote;
+      results.data = {
+        action: "create_actionscript_file",
+        scriptVersion: scriptVersion,
+        className: ${JSON.stringify(className)},
+        packageName: packageName,
+        fileName: fileName,
+        outputPath: outputPath,
+        outputURI: outputURI,
+        codeLength: code.length,
+        warnings: scriptVersion === "as2" ? getVersionWarnings("as2", info, code).warnings : getVersionWarnings("as3", info, code).warnings,
+        document: info
+      };
+      if (!wrote) {
+        results.error = "FLfile.write returned false for " + outputPath;
+      }
+    }
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeActionScriptResult(results);
+`;
+  }
+
+  private jsfl_addAS3DocumentClassStub(args: Record<string, any>): string {
+    const className = args.className || "Main";
+    const packageName = args.packageName || "";
+    const directory = args.directory || "";
+    const overwrite = args.overwrite === true;
+    const code = this.generateAS3ClassCode(className, packageName);
+
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+var className = ${JSON.stringify(className)};
+var packageName = ${JSON.stringify(packageName)};
+var requestedDirectory = ${JSON.stringify(directory)};
+var overwrite = ${overwrite};
+var code = ${JSON.stringify(code)};
+
+if (doc) {
+  var info = getActionScriptInfo(doc);
+  var baseDirectory = requestedDirectory || getPathDirectory(doc.path);
+
+  if (!baseDirectory) {
+    results.error = "No output directory was provided and the current document has not been saved yet.";
+  } else {
+    if (packageName) {
+      baseDirectory = joinPath(baseDirectory, packageName.replace(/\./g, "/"));
+    }
+
+    ensureFolderPath(baseDirectory);
+    var outputPath = joinPath(baseDirectory, className + ".as");
+    var outputURI = pathToFileURI(outputPath);
+
+    if (FLfile.exists(outputURI) && !overwrite) {
+      results.error = "Document class file already exists: " + outputPath;
+      results.data = { outputPath: outputPath, overwriteRequired: true };
+    } else {
+      var wrote = FLfile.write(outputURI, code);
+      doc.docClass = packageName ? packageName + "." + className : className;
+      info = getActionScriptInfo(doc);
+      results.success = !!wrote;
+      results.data = {
+        action: "add_as3_document_class_stub",
+        className: className,
+        qualifiedClassName: doc.docClass,
+        outputPath: outputPath,
+        outputURI: outputURI,
+        codeLength: code.length,
+        warnings: getVersionWarnings("as3", info, code).warnings,
+        document: info
+      };
+      if (!wrote) {
+        results.error = "FLfile.write returned false for " + outputPath;
+      }
+    }
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeActionScriptResult(results);
 `;
   }
 
@@ -1930,6 +2775,131 @@ if (doc) {
   fl.outputPanel.clear();
   fl.outputPanel.trace("Error: No document is open");
 }
+`;
+  }
+
+  private jsfl_scanActionScriptUsage(args: Record<string, any>): string {
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var info = getActionScriptInfo(doc);
+  var frameScripts = [];
+  var instanceScripts = [];
+  var totals = {
+    frameScripts: 0,
+    instanceScripts: 0,
+    likelyAS2: 0,
+    likelyAS3: 0,
+    ambiguous: 0,
+    unknown: 0
+  };
+
+  function recordClassification(classification) {
+    if (classification.likelyVersion === "as2") {
+      totals.likelyAS2++;
+    } else if (classification.likelyVersion === "as3") {
+      totals.likelyAS3++;
+    } else if (classification.likelyVersion === "ambiguous") {
+      totals.ambiguous++;
+    } else {
+      totals.unknown++;
+    }
+  }
+
+  for (var i = 0; i < timeline.layerCount; i++) {
+    var layer = timeline.layers[i];
+    for (var j = 0; j < layer.frames.length; j++) {
+      var frame = layer.frames[j];
+      if (frame.actionScript && frame.actionScript.length > 0) {
+        var frameClassification = classifyActionScriptCode(frame.actionScript);
+        recordClassification(frameClassification);
+        totals.frameScripts++;
+        frameScripts.push({
+          layerIndex: i,
+          layerName: layer.name,
+          frameNumber: frame.startFrame,
+          codeLength: frame.actionScript.length,
+          classification: frameClassification
+        });
+      }
+
+      if (frame.elements) {
+        for (var k = 0; k < frame.elements.length; k++) {
+          var element = frame.elements[k];
+          if (element.actionScript && element.actionScript.length > 0) {
+            var instanceClassification = classifyActionScriptCode(element.actionScript);
+            recordClassification(instanceClassification);
+            totals.instanceScripts++;
+            instanceScripts.push({
+              layerIndex: i,
+              layerName: layer.name,
+              frameNumber: frame.startFrame,
+              instanceName: element.name || "",
+              elementType: element.elementType || "",
+              codeLength: element.actionScript.length,
+              classification: instanceClassification
+            });
+          }
+        }
+      }
+    }
+  }
+
+  var mixedVersionRisk = totals.likelyAS2 > 0 && totals.likelyAS3 > 0;
+  var warnings = [];
+  if (mixedVersionRisk) {
+    warnings.push("This document appears to contain both AS2-style and AS3-style code. AS2 and AS3 are not compatible in the same publish target.");
+  }
+  if (totals.likelyAS2 > 0 && info.normalizedDocumentVersion !== "as2") {
+    warnings.push("AS2-style code was found, but the document does not report AS2 publish settings.");
+  }
+
+  results.success = true;
+  results.data = {
+    document: info,
+    totals: totals,
+    mixedVersionRisk: mixedVersionRisk,
+    warnings: warnings,
+    frameScripts: frameScripts,
+    instanceScripts: instanceScripts
+  };
+} else {
+  results.error = "No document is open";
+}
+
+writeActionScriptResult(results);
+`;
+  }
+
+  private jsfl_testMovieAndReport(args: Record<string, any>): string {
+    return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var info = getActionScriptInfo(doc);
+  fl.outputPanel.clear();
+  doc.testMovie();
+  results.success = true;
+  results.data = {
+    action: "testMovie",
+    message: "Test movie started. Adobe Animate writes compiler/runtime details to its Output panel.",
+    document: info,
+    guidance: [
+      "Use get_compiler_errors with testMovie false after Animate finishes if you need current document script locations.",
+      "AS2 compilation depends on legacy host/document support; modern Animate may not compile AS2."
+    ]
+  };
+} else {
+  results.error = "No document is open";
+}
+
+writeActionScriptResult(results);
 `;
   }
 
@@ -2191,13 +3161,19 @@ FLfile.write(outputPath, JSON.stringify(results));
   private jsfl_addActionScriptToSymbolByName(args: Record<string, any>): string {
     const instanceName = args.instanceName;
     const code = args.code;
+    const scriptVersion = args.scriptVersion || "auto";
 
     return `${this.getJSONPolyfill()}
+${this.getActionScriptHelpers()}
 var doc = fl.getDocumentDOM();
 var results = { success: false, data: null, error: null };
+var code = ${JSON.stringify(code)};
+var requestedVersion = ${JSON.stringify(scriptVersion)};
 
 if (doc) {
   var timeline = doc.getTimeline();
+  var info = getActionScriptInfo(doc);
+  var versionResult = getVersionWarnings(requestedVersion, info, code);
   var found = false;
   
   // Search through all layers and frames for the instance
@@ -2209,14 +3185,20 @@ if (doc) {
         for (var k = 0; k < frame.elements.length; k++) {
           var element = frame.elements[k];
           if (element.elementType === "instance" && element.name === "${instanceName}") {
-            element.actionScript = ${JSON.stringify(code)};
+            element.actionScript = code;
             found = true;
             results.success = true;
             results.data = {
               instanceName: "${instanceName}",
               layer: layer.name,
               frameNumber: frame.startFrame,
-              codeAdded: true
+              codeAdded: true,
+              scriptVersion: versionResult.resolvedVersion,
+              requestedVersion: versionResult.requestedVersion,
+              syntax: versionResult.syntax,
+              warnings: versionResult.warnings,
+              codeLength: code.length,
+              document: info
             };
             fl.outputPanel.clear();
             fl.outputPanel.trace("Added ActionScript to instance: ${instanceName}");
