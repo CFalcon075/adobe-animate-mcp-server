@@ -30,7 +30,7 @@ This is especially useful for animation prototyping, Flash/Animate game workflow
 - Create new Animate documents with custom dimensions and frame rates.
 - Draw rectangles, ovals, text, and imported image assets.
 - Add layers, keyframes, classic tweens, and symbols.
-- Add ActionScript 3.0 to frames, instances, and named symbols.
+- Add ActionScript 2.0 or 3.0 to frames, instances, and named symbols.
 - Inspect the current project name, file path, save state, layers, and library items.
 - Run custom JSFL and return structured JSON back to the AI assistant.
 - Check compiler/debug output and trigger test movie workflows.
@@ -176,16 +176,28 @@ Run custom JSFL that returns the current document name and layer count.
 | `create_motion_tween` | Creates a classic motion tween between frames. |
 | `convert_to_symbol` | Converts selected artwork into a movie clip, button, or graphic symbol. |
 
-### ActionScript 3.0
+### ActionScript 2.0 And 3.0
 
 | Tool | What It Does |
 | --- | --- |
-| `add_actionscript_to_frame` | Adds ActionScript to a specific timeline frame. |
-| `add_actionscript_to_instance` | Adds ActionScript to the selected instance. |
-| `set_document_class` | Sets the AS3 document class. |
+| `get_actionscript_info` | Reports document ActionScript version, document class, source/class paths, publish profile data, and AS2/AS3 capability warnings. |
+| `set_actionscript_version` | Attempts to set the document ActionScript version through safe JSFL properties and reports if the host blocks it. |
+| `add_actionscript_to_frame` | Adds AS2, AS3, or auto-detected ActionScript to a specific timeline frame. |
+| `add_actionscript_to_instance` | Adds AS2, AS3, or auto-detected ActionScript to the selected instance. |
+| `add_actionscript_to_symbol_by_name` | Finds a named symbol instance and adds AS2, AS3, or auto-detected ActionScript. |
+| `set_document_class` | Sets the AS3 document class. AS2 does not use AS3 document classes. |
 | `add_stop_action` | Adds `stop();` to a frame. |
 | `add_gotoAndPlay_action` | Adds `gotoAndPlay(...)` frame navigation. |
 | `add_gotoAndStop_action` | Adds `gotoAndStop(...)` frame navigation. |
+| `add_as2_keyboard_controls` | Adds AS2 `Key.isDown(...)` movement controls for a player instance. |
+| `add_as2_button_handler` | Adds an AS2 button handler such as `onRelease`. |
+| `add_as2_frame_loop` | Adds an AS2 `onEnterFrame` loop. |
+| `add_as3_keyboard_controls` | Adds AS3 `KeyboardEvent.KEY_DOWN` movement controls for a player instance. |
+| `add_as3_button_handler` | Adds an AS3 `MouseEvent.CLICK` button handler. |
+| `add_as3_document_class_stub` | Creates an AS3 `Main.as`-style class file and sets it as the document class. |
+| `create_actionscript_file` | Creates an external AS2 or AS3 `.as` file beside the `.fla` or in a provided folder. |
+| `scan_actionscript_usage` | Scans frame and instance scripts and classifies likely AS2 vs AS3 syntax. |
+| `test_movie_and_report` | Starts Test Movie and returns ActionScript/project metadata plus compiler-output guidance. |
 
 ### Inspection And Debugging
 
@@ -199,7 +211,6 @@ Run custom JSFL that returns the current document name and layer count.
 | `get_layers_info` | Returns detailed layer information. |
 | `get_timeline_tree` | Returns the timeline as folder/layer metadata. |
 | `select_layer_by_name` | Selects a layer by name. |
-| `add_actionscript_to_symbol_by_name` | Finds a named symbol instance and adds ActionScript. |
 
 ### Utilities
 
@@ -208,6 +219,56 @@ Run custom JSFL that returns the current document name and layer count.
 | `select_all` | Selects all elements on the current frame. |
 | `delete_selection` | Deletes the current selection. |
 | `run_custom_jsfl` | Runs custom JSFL for advanced workflows. |
+
+## ActionScript 2.0 And 3.0 Support
+
+This MCP has version-aware ActionScript tooling. It can insert, inspect, template, scan, and manage both AS2-style and AS3-style code.
+
+There is one important product limitation: modern Adobe Animate supports AS3, while AS2 is legacy/deprecated and may require an older Flash/Animate host to compile. The MCP does not hide that limitation. When you request AS2, tools return capability warnings if the current document/app does not report AS2 support.
+
+Use `get_actionscript_info` before adding larger scripts:
+
+```text
+Check the current ActionScript version and tell me whether this FLA can compile AS2 or AS3.
+```
+
+Add AS2 frame code:
+
+```text
+Add AS2 keyboard controls for the player instance named player.
+```
+
+Add AS3 frame code:
+
+```text
+Add AS3 keyboard controls for the player instance named player.
+```
+
+Create an external AS3 document class:
+
+```text
+Create an AS3 document class stub named Main and set it as the document class.
+```
+
+Create an external AS2 class/helper file:
+
+```text
+Create an AS2 ActionScript file named GameController beside the FLA.
+```
+
+Scan for mixed script styles:
+
+```text
+Scan this FLA for ActionScript and tell me whether it looks like AS2, AS3, or mixed.
+```
+
+Supported version modes:
+
+```text
+as2   Legacy ActionScript 2.0 code and templates.
+as3   Modern ActionScript 3.0 code and templates.
+auto  Infer the likely version from the code and document metadata.
+```
 
 ### Timeline Folder Organization
 
