@@ -1,46 +1,72 @@
-# Adobe Animate MCP Server
+<p align="center">
+  <img src="adobe-animate-logo.png" alt="Adobe Animate logo" width="140" />
+</p>
 
-A Model Context Protocol (MCP) server that enables AI assistants (like Claude) to control and automate Adobe Animate through natural language commands.
+<h1 align="center">Adobe Animate MCP Server</h1>
 
-## What is This?
+<p align="center">
+  Control Adobe Animate from an MCP-compatible AI assistant using natural language, JSFL automation, and structured tool responses.
+</p>
 
-This project allows AI to:
-- Create new Adobe Animate documents
-- Draw shapes (rectangles, ovals)
-- Add text and images
-- Create animations with keyframes and tweens
-- Manage layers and timelines
-- Export animations to various formats
-- Run custom JSFL scripts
+<p align="center">
+  <a href="https://modelcontextprotocol.io/"><img alt="MCP" src="https://img.shields.io/badge/MCP-compatible-blue" /></a>
+  <img alt="Node.js 18+" src="https://img.shields.io/badge/Node.js-18%2B-339933" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-ready-3178C6" />
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-lightgrey" />
+</p>
 
-All through simple conversational commands!
+---
 
-## Prerequisites
+## Overview
 
-- **Adobe Animate** (2020 or later) - Must be installed on your computer
-- **Node.js** (18.0 or later) - [Download here](https://nodejs.org/)
-- **An MCP-compatible AI client** (like Claude Desktop)
+`adobe-animate-mcp-server` is a local Model Context Protocol server that lets an AI assistant control Adobe Animate through JSFL, Adobe Animate's scripting system.
 
-## Installation
+Instead of manually writing and running JSFL scripts, you can ask your assistant to create documents, draw shapes, manage timelines, add ActionScript, inspect symbols and layers, read compiler output, and export/publish work. The server translates those requests into JSFL, runs them in Adobe Animate, and returns structured results back to the assistant.
 
-### Step 1: Install the Server
+This is especially useful for animation prototyping, Flash/Animate game workflows, repetitive authoring tasks, and debugging timeline or ActionScript projects.
 
-Open your terminal/command prompt and run:
+## Highlights
+
+- Create new Animate documents with custom dimensions and frame rates.
+- Draw rectangles, ovals, text, and imported image assets.
+- Add layers, keyframes, classic tweens, and symbols.
+- Add ActionScript 3.0 to frames, instances, and named symbols.
+- Inspect the current project name, file path, save state, layers, and library items.
+- Run custom JSFL and return structured JSON back to the AI assistant.
+- Check compiler/debug output and trigger test movie workflows.
+- Export or publish Animate projects from natural language commands.
+
+## Requirements
+
+- Adobe Animate 2020 or later.
+- Node.js 18 or later.
+- An MCP-compatible client, such as Cursor, Claude Desktop, or another MCP host.
+- Windows or macOS. The current executor includes Windows-oriented Animate paths, but the JSFL concepts are cross-platform.
+
+## Quick Start
+
+Install dependencies and build the server:
 
 ```bash
 npm install
 npm run build
 ```
 
-### Step 2: Configure Your AI Client
+Start the server locally:
 
-#### For Claude Desktop:
+```bash
+npm start
+```
 
-1. Find your Claude Desktop configuration file:
-   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-   - **Mac**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+For development, rebuild and start in one command:
 
-2. Open the file and add this configuration:
+```bash
+npm run dev
+```
+
+## MCP Client Setup
+
+Add the server to your MCP client configuration. Replace the example path with the absolute path to your local `dist/index.js`.
 
 ```json
 {
@@ -48,261 +74,285 @@ npm run build
     "adobe-animate": {
       "command": "node",
       "args": [
-        "D:/Coding Stuff/Model Context Protocol Server Coding/Adobe Animate MCP/dist/index.js"
+        "C:/path/to/adobe-animate-mcp-server/dist/index.js"
       ]
     }
   }
 }
 ```
 
-**Important**: Replace the path with the actual path to your `dist/index.js` file. Use forward slashes (/) even on Windows.
+On Windows, forward slashes are recommended inside JSON paths:
 
-3. Restart Claude Desktop
-
-## How to Use
-
-Once installed, you can ask Claude to control Adobe Animate using natural language:
-
-### Example Commands
-
-**Create a new animation:**
-```
-"Create a new Animate document that's 1920x1080 pixels at 30fps"
+```text
+C:/Users/YourName/projects/adobe-animate-mcp-server/dist/index.js
 ```
 
-**Draw shapes:**
-```
-"Draw a red rectangle at position (100, 100) that's 200 pixels wide and 150 pixels tall"
-```
-
-**Add text:**
-```
-"Add the text 'Hello World' at position (400, 300) with font size 48"
-```
-
-**Create animation:**
-```
-"Create a keyframe at frame 30"
-"Create a motion tween from frame 0 to frame 30"
-```
-
-**Save your work:**
-```
-"Save the document to C:/Users/YourName/Desktop/my_animation.fla"
-```
-
-**Export:**
-```
-"Export the animation as HTML5 to C:/Users/YourName/Desktop/output"
-```
-
-**Add ActionScript (NEW!):**
-```
-"Add a stop() action to frame 10"
-"Add this ActionScript to the current frame: trace('Hello World');"
-"Set the document class to 'Main'"
-"Create a button, then add ActionScript to make it play a sound on click"
-```
-
-**Debug and Check Errors (NEW!):**
-```
-"Check for any errors or warnings in my document"
-"Test my movie and show me any compilation errors"
-"Clear the output panel"
-```
-
-**Inspect Project Information (NEW!):**
-```
-"What is the current Animate project name?"
-"Show me the current document path and project metadata"
-```
-
-**Scan Symbols and Layers (NEW!):**
-```
-"Show me all symbols in the library"
-"List all movie clips in my library"
-"Get information about all my layers"
-"Select the layer called 'Background'"
-"Add ActionScript to the button named 'playButton'"
-```
-
-## Available Tools
-
-The server provides these tools to AI:
-
-### Document & Drawing Tools
-1. **create_new_document** - Create new Animate documents
-2. **save_document** - Save your work
-3. **add_layer** - Add new layers to timeline
-4. **draw_rectangle** - Draw rectangles
-5. **draw_oval** - Draw ovals/circles
-6. **add_text** - Add text elements
-7. **import_image** - Import images
-8. **export_movie** - Export/publish animations
-
-### Animation Tools
-9. **create_keyframe** - Insert keyframes
-10. **create_motion_tween** - Create motion animations
-11. **convert_to_symbol** - Convert to symbols (movie clips, buttons, graphics)
-
-### ActionScript 3.0 Tools (NEW!)
-12. **add_actionscript_to_frame** - Add ActionScript code to a specific frame
-13. **add_actionscript_to_instance** - Add ActionScript to a button or movie clip
-14. **set_document_class** - Set the document class for AS3 projects
-15. **add_stop_action** - Add stop() to a frame
-16. **add_gotoAndPlay_action** - Add gotoAndPlay() navigation
-17. **add_gotoAndStop_action** - Add gotoAndStop() navigation
-
-### Utility Tools
-18. **get_document_info** - Get document information, including project/document name fields
-19. **get_project_info** - Get the current project name, file path, save state, document class, timeline summary, and library summary
-20. **select_all** - Select all elements
-21. **delete_selection** - Delete selected elements
-22. **run_custom_jsfl** - Run custom JSFL code for advanced operations
-
-### Debugging Tools (NEW!)
-23. **get_compiler_errors** - Get compiler errors, warnings, and document status
-24. **clear_output_panel** - Clear the Adobe Animate output panel
-
-### Library & Layer Scanning Tools (NEW!)
-25. **get_library_items** - List all symbols and items in the library (with type filtering)
-26. **get_layers_info** - Get detailed information about all layers
-27. **select_layer_by_name** - Select a specific layer by its name
-28. **add_actionscript_to_symbol_by_name** - Add ActionScript to a symbol instance by name
+After saving the config, restart your MCP client so it reloads the server.
 
 ## How It Works
 
-This server uses Adobe Animate's JSFL (JavaScript for Animate) scripting language to control the application. When you give a command to Claude:
-
-1. Claude understands your request
-2. Selects the appropriate tool
-3. The MCP server generates JSFL code
-4. The code is executed in Adobe Animate
-5. Results are returned to Claude
-
-## Important Notes
-
-### About JSFL Execution
-
-Adobe Animate's JSFL execution has some limitations:
-
-- **Adobe Animate must be running** for commands to work
-- Some commands require manual execution (see Troubleshooting below)
-- Always use **forward slashes (/)** in file paths, even on Windows
-  - Good: `C:/Users/Name/Desktop/file.fla`
-  - Bad: `C:\Users\Name\Desktop\file.fla`
-
-### Troubleshooting
-
-If commands aren't executing automatically:
-
-**Method 1: Manual JSFL Execution**
-
-1. Ask Claude to generate the JSFL code
-2. Copy the code
-3. In Adobe Animate, go to: **Commands > Run Command...**
-4. Paste the code and click **Run**
-
-**Method 2: Install as Command**
-
-1. Ask Claude for the JSFL code
-2. Save it as a `.jsfl` file
-3. Place it in:
-   - Windows: `C:\Users\[YourUsername]\AppData\Local\Adobe\Animate [Version]\en_US\Configuration\Commands\`
-   - Mac: `~/Library/Application Support/Adobe/Animate [Version]/en_US/Configuration/Commands/`
-4. Restart Adobe Animate
-5. Access from: **Commands menu** > **[Your Script Name]**
-
-## Example JSFL Scripts
-
-The `examples/` folder contains sample JSFL scripts you can run manually:
-
-- `create_bouncing_ball.jsfl` - Creates a simple bouncing ball animation
-- `draw_shapes.jsfl` - Demonstrates drawing various shapes
-- `create_text_animation.jsfl` - Creates animated text
-
-To use these:
-1. Open Adobe Animate
-2. Go to **Commands > Run Command...**
-3. Browse to the example file and run it
-
-## Development
-
-### Project Structure
-
+```mermaid
+flowchart LR
+  userPrompt["Natural language request"] --> mcpClient["MCP client"]
+  mcpClient --> server["Adobe Animate MCP Server"]
+  server --> toolRouter["Tool router"]
+  toolRouter --> jsflGenerator["JSFL generator"]
+  jsflGenerator --> animate["Adobe Animate"]
+  animate --> outputFile["Structured output file"]
+  outputFile --> server
+  server --> mcpClient
 ```
+
+1. You ask your assistant to do something in Adobe Animate.
+2. The MCP client sends a tool call to this server.
+3. The server chooses the matching tool and generates JSFL.
+4. The JSFL runs in Adobe Animate.
+5. Results are written to a temporary output file and returned to the assistant.
+
+## Example Prompts
+
+Create a document:
+
+```text
+Create a new Adobe Animate document that's 1280x720 at 30fps.
+```
+
+Draw artwork:
+
+```text
+Draw a dark blue rectangle that fills the background, then add white title text in the center.
+```
+
+Set up a game scene:
+
+```text
+Create layers named Background, Player, Enemies, UI, and Actions.
+```
+
+Inspect the current project:
+
+```text
+What is the current Animate project name and where is the FLA saved?
+```
+
+Debug ActionScript:
+
+```text
+Test my movie and show me any compiler errors or warnings.
+```
+
+Run custom JSFL and return data:
+
+```text
+Run custom JSFL that returns the current document name and layer count.
+```
+
+## Tool Reference
+
+### Document And Drawing
+
+| Tool | What It Does |
+| --- | --- |
+| `create_new_document` | Creates a new Animate document with dimensions and frame rate. |
+| `save_document` | Saves the current `.fla` file to a specific path. |
+| `add_layer` | Adds a new timeline layer. |
+| `draw_rectangle` | Draws a rectangle on the stage. |
+| `draw_oval` | Draws an oval or ellipse on the stage. |
+| `add_text` | Adds editable text to the stage. |
+| `import_image` | Imports an image to the stage or library. |
+| `export_movie` | Publishes or exports the current animation. |
+
+### Animation
+
+| Tool | What It Does |
+| --- | --- |
+| `create_keyframe` | Inserts a keyframe at a specific frame. |
+| `create_motion_tween` | Creates a classic motion tween between frames. |
+| `convert_to_symbol` | Converts selected artwork into a movie clip, button, or graphic symbol. |
+
+### ActionScript 3.0
+
+| Tool | What It Does |
+| --- | --- |
+| `add_actionscript_to_frame` | Adds ActionScript to a specific timeline frame. |
+| `add_actionscript_to_instance` | Adds ActionScript to the selected instance. |
+| `set_document_class` | Sets the AS3 document class. |
+| `add_stop_action` | Adds `stop();` to a frame. |
+| `add_gotoAndPlay_action` | Adds `gotoAndPlay(...)` frame navigation. |
+| `add_gotoAndStop_action` | Adds `gotoAndStop(...)` frame navigation. |
+
+### Inspection And Debugging
+
+| Tool | What It Does |
+| --- | --- |
+| `get_document_info` | Returns document dimensions, timeline state, layers, and project name fields. |
+| `get_project_info` | Returns project name, file path, save state, document class, timeline summary, and library summary. |
+| `get_compiler_errors` | Reads document/debug status or starts a test movie compile check. |
+| `clear_output_panel` | Clears the Adobe Animate output panel. |
+| `get_library_items` | Lists symbols, bitmaps, sounds, fonts, and other library items. |
+| `get_layers_info` | Returns detailed layer information. |
+| `select_layer_by_name` | Selects a layer by name. |
+| `add_actionscript_to_symbol_by_name` | Finds a named symbol instance and adds ActionScript. |
+
+### Utilities
+
+| Tool | What It Does |
+| --- | --- |
+| `select_all` | Selects all elements on the current frame. |
+| `delete_selection` | Deletes the current selection. |
+| `run_custom_jsfl` | Runs custom JSFL for advanced workflows. |
+
+## Project Metadata Capture
+
+The `get_project_info` tool is designed for workflows where the assistant needs to understand the active Animate file before making changes.
+
+Typical response fields include:
+
+```json
+{
+  "projectName": "GLING DING HORROR GAME",
+  "documentName": "GLING DING HORROR GAME.fla",
+  "fileName": "GLING DING HORROR GAME.fla",
+  "path": "C:\\Users\\You\\Documents\\GLING DING HORROR GAME.fla",
+  "saved": true,
+  "modified": false,
+  "dimensions": {
+    "width": 640,
+    "height": 480,
+    "frameRate": 30
+  }
+}
+```
+
+This helps the assistant avoid guessing which project is open and makes it easier to build game-specific workflows around the active `.fla`.
+
+## Custom JSFL Output
+
+`run_custom_jsfl` supports structured output. Inside your JSFL, assign a value to `__mcpResult` and the server will return it to the MCP client:
+
+```javascript
+var doc = fl.getDocumentDOM();
+
+__mcpResult = {
+  documentName: doc ? doc.name : null,
+  layerCount: doc ? doc.getTimeline().layerCount : 0
+};
+```
+
+If custom JSFL throws an error, the MCP response includes the error instead of only saying the script executed.
+
+## Example Scripts
+
+The `examples/` directory contains standalone JSFL scripts that can be run manually from Adobe Animate:
+
+- `examples/create_bouncing_ball.jsfl`
+- `examples/create_text_animation.jsfl`
+- `examples/draw_shapes.jsfl`
+
+To run one manually, open Adobe Animate and choose **Commands > Run Command...**, then select the `.jsfl` file.
+
+## Project Structure
+
+```text
 adobe-animate-mcp-server/
 ├── src/
-│   ├── index.ts           # Main MCP server
-│   ├── tools.ts           # Tool definitions and JSFL generation
-│   └── jsfl-executor.ts   # JSFL execution logic
-├── examples/              # Example JSFL scripts
-├── dist/                  # Compiled JavaScript (generated)
+│   ├── index.ts
+│   ├── tools.ts
+│   └── jsfl-executor.ts
+├── examples/
+├── dist/
+├── adobe-animate-logo.png
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
 
-### Building
+Key files:
+
+- `src/index.ts` starts the MCP server and registers tool handlers.
+- `src/tools.ts` defines tool schemas and generates JSFL scripts.
+- `src/jsfl-executor.ts` writes JSFL to disk, launches Animate, captures structured output, and returns it to the MCP client.
+
+## Development
+
+Build the TypeScript project:
 
 ```bash
 npm run build
 ```
 
-### Running Locally
+Run the compiled server:
 
 ```bash
 npm start
 ```
 
-## Advanced Usage
+Run a development cycle:
 
-### Custom JSFL Scripts
-
-You can run custom JSFL code using the `run_custom_jsfl` tool:
-
-```
-"Run this JSFL code: fl.outputPanel.trace('Hello from JSFL!');"
+```bash
+npm run dev
 ```
 
-### Combining Multiple Operations
+## Troubleshooting
 
-Claude can execute multiple operations in sequence:
+### Adobe Animate Must Be Running
 
+Adobe Animate needs to be installed and available for JSFL execution. Some workflows work best when Animate is already open with a document loaded.
+
+### Restart Your MCP Client After Changes
+
+If you add a new tool or rebuild the server, restart your MCP client so it reloads the tool list.
+
+### Use Forward Slashes In Config Paths
+
+Use this in MCP JSON config:
+
+```text
+C:/Users/YourName/projects/adobe-animate-mcp-server/dist/index.js
 ```
-"Create a new 1920x1080 document, add a layer called 'Background', 
-draw a blue rectangle at (0,0) that fills the entire stage, 
-then add another layer called 'Text' and add 'My Animation' in white text 
-at the center of the stage"
+
+Avoid unescaped backslashes in JSON:
+
+```text
+C:\Users\YourName\projects\adobe-animate-mcp-server\dist\index.js
 ```
 
-## Contributing
+### Manual JSFL Fallback
 
-This is an open-source project. Feel free to:
-- Report issues
-- Submit improvements
-- Add new tools and features
-- Share your creative uses!
+If automatic execution fails, you can still run generated JSFL manually:
+
+1. Copy the JSFL script.
+2. Open Adobe Animate.
+3. Choose **Commands > Run Command...**.
+4. Paste or select the script and run it.
+
+You can also place reusable `.jsfl` commands in:
+
+```text
+C:\Users\[YourUsername]\AppData\Local\Adobe\Animate [Version]\en_US\Configuration\Commands\
+```
 
 ## Resources
 
-- [Adobe Animate JSFL Reference](https://an-scripting.docsforadobe.dev/)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [MCP GitHub Repository](https://github.com/modelcontextprotocol)
+- [Adobe Animate JSFL Reference](https://an-scripting.docsforadobe.dev/)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+
+## Contributing
+
+Contributions are welcome. Good areas to improve include:
+
+- More game-development helper tools.
+- Better export/publish profile control.
+- More robust cross-platform Animate executable discovery.
+- Additional JSFL examples and templates.
+- End-to-end tests for generated JSFL snippets.
 
 ## License
 
-MIT License - See LICENSE file for details
-
-## Support
-
-If you run into issues:
-1. Make sure Adobe Animate is running
-2. Check that Node.js is installed correctly
-3. Verify the path in your Claude Desktop config
-4. Try running JSFL code manually to test Adobe Animate scripting
+MIT License. See [LICENSE](LICENSE) for details.
 
 ## Disclaimer
 
-This is an unofficial tool and is not affiliated with or endorsed by Adobe. Adobe Animate is a trademark of Adobe Inc.
+This is an unofficial community project. It is not affiliated with, sponsored by, or endorsed by Adobe. Adobe Animate is a trademark of Adobe Inc.
 
