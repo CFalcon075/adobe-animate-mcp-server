@@ -5,17 +5,115 @@
  */
 
 import { writeFileSync, unlinkSync, readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import { tmpdir } from "os";
 import { exec } from "child_process";
 import { promisify } from "util";
 
 const execAsync = promisify(exec);
+const OUTPUT_CAPTURE_TIMEOUT_MS = 15000;
+const OUTPUT_CAPTURE_POLL_MS = 250;
 
 export interface JSFLResult {
   success: boolean;
   output?: string;
   error?: string;
+}
+
+interface OutputCaptureResult {
+  data: any | null;
+  found: boolean;
+  error?: string;
+  rawContent?: string;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function formatJSFLFileURI(filePath: string): string {
+  const normalizedPath = resolve(filePath).replace(/\\/g, "/");
+  const encodedPath = encodeURI(normalizedPath).replace(/#/g, "%23");
+
+  return encodedPath.startsWith("/")
+    ? `file://${encodedPath}`
+    : `file:///${encodedPath}`;
+}
+
+function formatOutputValue(value: unknown): string {
+  if (value === undefined) {
+    return "";
+  }
+
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+function formatCapturedOutput(outputData: any): JSFLResult {
+  const hasData = outputData && Object.prototype.hasOwnProperty.call(outputData, "data");
+  const outputValue = hasData
+    ? outputData.data
+    : outputData?.output ?? outputData?.error ?? outputData;
+
+  return {
+    success: outputData?.success !== false,
+    output: formatOutputValue(outputValue),
+    error: outputData?.error || undefined,
+  };
+}
+
+function truncateForDiagnostics(value: string): string {
+  const maxLength = 1000;
+  return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
+}
+
+async function readOutputFileWhenReady(filePath: string): Promise<OutputCaptureResult> {
+  const deadline = Date.now() + OUTPUT_CAPTURE_TIMEOUT_MS;
+  let lastError: string | undefined;
+  let lastContent: string | undefined;
+
+  while (Date.now() <= deadline) {
+    if (existsSync(filePath)) {
+      try {
+        const outputContent = readFileSync(filePath, "utf8");
+        lastContent = outputContent;
+
+        if (outputContent.trim().length === 0) {
+          lastError = "Output file was created but empty";
+        } else {
+          return {
+            data: JSON.parse(outputContent),
+            found: true,
+            rawContent: outputContent,
+          };
+        }
+      } catch (error) {
+        lastError = getErrorMessage(error);
+      }
+    }
+
+    await sleep(OUTPUT_CAPTURE_POLL_MS);
+  }
+
+  return {
+    data: null,
+    found: existsSync(filePath),
+    error: lastError,
+    rawContent: lastContent,
+  };
+}
+
+function removeFileIfExists(filePath: string): void {
+  try {
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+  } catch (e) {
+    // Ignore cleanup errors
+  }
 }
 
 /**
@@ -33,9 +131,10 @@ export async function executeJSFL(jsflCode: string): Promise<JSFLResult> {
     const tempFileName = `animate_mcp_${timestamp}.jsfl`;
     const outputFileName = `animate_mcp_output_${timestamp}.json`;
     const outputFilePath = join(tmpdir(), outputFileName);
+    const expectsStructuredOutput = jsflCode.includes("%%OUTPUT_FILE%%");
     
     // Convert to file URI format for FLfile.write() (JSFL requires file:// format)
-    const outputFileURI = 'file:///' + outputFilePath.replace(/\\/g, '/');
+    const outputFileURI = formatJSFLFileURI(outputFilePath);
     
     // Replace placeholder with file URI
     const processedCode = jsflCode.replace(/%%OUTPUT_FILE%%/g, outputFileURI);
@@ -96,27 +195,10 @@ export async function executeJSFL(jsflCode: string): Promise<JSFLResult> {
       }
     }
 
-    // Wait longer for Adobe Animate to read and execute the file before cleanup
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // Try to read output file
-    let outputData: any = null;
-    try {
-      if (existsSync(outputFilePath)) {
-        const outputContent = readFileSync(outputFilePath, 'utf8');
-        outputData = JSON.parse(outputContent);
-        unlinkSync(outputFilePath); // Clean up output file
-      }
-    } catch (e) {
-      // Output file not created or invalid JSON - continue with default behavior
-    }
+    const outputCapture = await readOutputFileWhenReady(outputFilePath);
 
     // Clean up JSFL temporary file
-    try {
-      unlinkSync(tempFilePath);
-    } catch (e) {
-      // Ignore cleanup errors
-    }
+    removeFileIfExists(tempFilePath);
 
     if (!executed) {
       // Alternative method: Write to Adobe Animate's Scripts folder
@@ -133,11 +215,33 @@ Or manually run the script from: ${tempFilePath}`,
     }
 
     // Return structured output if available
-    if (outputData) {
+    if (outputCapture.data) {
+      removeFileIfExists(outputFilePath);
+      return formatCapturedOutput(outputCapture.data);
+    }
+
+    if (expectsStructuredOutput) {
+      const diagnosticLines = [
+        "JSFL executed, but the MCP server could not capture the structured output file.",
+        `Expected output file: ${outputFilePath}`,
+        `Expected output URI: ${outputFileURI}`,
+        outputCapture.found
+          ? "The output file was found but could not be read as valid JSON."
+          : "The output file was not created before the capture timeout.",
+      ];
+
+      if (outputCapture.error) {
+        diagnosticLines.push(`Capture error: ${outputCapture.error}`);
+      }
+
+      if (outputCapture.rawContent) {
+        diagnosticLines.push(`Raw output: ${truncateForDiagnostics(outputCapture.rawContent)}`);
+      }
+
       return {
-        success: outputData.success !== false,
-        output: outputData.data ? JSON.stringify(outputData.data, null, 2) : outputData.error,
-        error: outputData.error || undefined,
+        success: false,
+        output: diagnosticLines.join("\n"),
+        error: outputCapture.error || "Structured JSFL output was not captured",
       };
     }
 

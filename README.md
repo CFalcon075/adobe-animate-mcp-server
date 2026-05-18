@@ -111,6 +111,12 @@ Once installed, you can ask Claude to control Adobe Animate using natural langua
 "Clear the output panel"
 ```
 
+**Inspect Project Information (NEW!):**
+```
+"What is the current Animate project name?"
+"Show me the current document path and project metadata"
+```
+
 **Scan Symbols and Layers (NEW!):**
 ```
 "Show me all symbols in the library"
@@ -148,20 +154,21 @@ The server provides these tools to AI:
 17. **add_gotoAndStop_action** - Add gotoAndStop() navigation
 
 ### Utility Tools
-18. **get_document_info** - Get document information
-19. **select_all** - Select all elements
-20. **delete_selection** - Delete selected elements
-21. **run_custom_jsfl** - Run custom JSFL code for advanced operations
+18. **get_document_info** - Get document information, including project/document name fields
+19. **get_project_info** - Get the current project name, file path, save state, document class, timeline summary, and library summary
+20. **select_all** - Select all elements
+21. **delete_selection** - Delete selected elements
+22. **run_custom_jsfl** - Run custom JSFL code for advanced operations
 
 ### Debugging Tools (NEW!)
-22. **get_compiler_errors** - Get compiler errors, warnings, and document status
-23. **clear_output_panel** - Clear the Adobe Animate output panel
+23. **get_compiler_errors** - Get compiler errors, warnings, and document status
+24. **clear_output_panel** - Clear the Adobe Animate output panel
 
 ### Library & Layer Scanning Tools (NEW!)
-24. **get_library_items** - List all symbols and items in the library (with type filtering)
-25. **get_layers_info** - Get detailed information about all layers
-26. **select_layer_by_name** - Select a specific layer by its name
-27. **add_actionscript_to_symbol_by_name** - Add ActionScript to a symbol instance by name
+25. **get_library_items** - List all symbols and items in the library (with type filtering)
+26. **get_layers_info** - Get detailed information about all layers
+27. **select_layer_by_name** - Select a specific layer by its name
+28. **add_actionscript_to_symbol_by_name** - Add ActionScript to a symbol instance by name
 
 ## How It Works
 

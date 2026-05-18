@@ -286,6 +286,14 @@ export class AnimateTools {
       },
     },
     {
+      name: "get_project_info",
+      description: "Get the current Animate project/document name, file path, save state, and related project metadata",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
       name: "select_all",
       description: "Select all elements on the current frame",
       inputSchema: {
@@ -526,12 +534,14 @@ export class AnimateTools {
         return this.jsfl_exportMovie(args);
       case "get_document_info":
         return this.jsfl_getDocumentInfo(args);
+      case "get_project_info":
+        return this.jsfl_getProjectInfo(args);
       case "select_all":
         return this.jsfl_selectAll(args);
       case "delete_selection":
         return this.jsfl_deleteSelection(args);
       case "run_custom_jsfl":
-        return args.code || "";
+        return this.jsfl_runCustomJSFL(args);
       case "add_actionscript_to_frame":
         return this.jsfl_addActionScriptToFrame(args);
       case "add_actionscript_to_instance":
@@ -574,6 +584,55 @@ doc.height = ${height};
 doc.frameRate = ${frameRate};
 fl.outputPanel.clear();
 fl.outputPanel.trace("Created new document: " + ${width} + "x" + ${height} + " @ " + ${frameRate} + "fps");
+`;
+  }
+
+  private jsfl_runCustomJSFL(args: Record<string, any>): string {
+    const code = typeof args.code === "string" ? args.code : "";
+
+    return `${this.getJSONPolyfill()}
+var __mcpOutputPath = "%%OUTPUT_FILE%%";
+var __mcpResult;
+var __mcpEvalResult;
+
+function __mcpHasOutputFile() {
+  try {
+    return FLfile.exists(__mcpOutputPath);
+  } catch (__mcpExistsError) {
+    return false;
+  }
+}
+
+try {
+  __mcpEvalResult = eval(${JSON.stringify(code)});
+
+  if (typeof __mcpResult === "undefined" && typeof __mcpEvalResult !== "undefined") {
+    __mcpResult = __mcpEvalResult;
+  }
+
+  if (!__mcpHasOutputFile()) {
+    FLfile.write(__mcpOutputPath, JSON.stringify({
+      success: true,
+      data: typeof __mcpResult !== "undefined" ? __mcpResult : {
+        message: "JSFL executed successfully"
+      }
+    }));
+  }
+} catch (__mcpCaughtError) {
+  var __mcpErrorMessage = (__mcpCaughtError && __mcpCaughtError.message)
+    ? __mcpCaughtError.message
+    : String(__mcpCaughtError);
+
+  try {
+    fl.outputPanel.trace("MCP custom JSFL error: " + __mcpErrorMessage);
+  } catch (__mcpTraceError) {
+  }
+
+  FLfile.write(__mcpOutputPath, JSON.stringify({
+    success: false,
+    error: __mcpErrorMessage
+  }));
+}
 `;
   }
 
@@ -777,9 +836,39 @@ if (doc) {
 var doc = fl.getDocumentDOM();
 var results = { success: false, data: null, error: null };
 
+function getFileNameFromPath(path, fallbackName) {
+  if (!path) {
+    return fallbackName || "";
+  }
+
+  var normalizedPath = String(path).replace(/\\\\/g, "/");
+  var slashIndex = normalizedPath.lastIndexOf("/");
+  return slashIndex >= 0 ? normalizedPath.substring(slashIndex + 1) : normalizedPath;
+}
+
+function stripExtension(fileName) {
+  if (!fileName) {
+    return "";
+  }
+
+  var dotIndex = fileName.lastIndexOf(".");
+  return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+}
+
 if (doc) {
   var timeline = doc.getTimeline();
+  var documentName = doc.name || "Untitled";
+  var documentPath = doc.path || "";
+  var fileName = getFileNameFromPath(documentPath, documentName);
+  var projectName = stripExtension(fileName || documentName);
   var info = {
+    documentName: documentName,
+    projectName: projectName,
+    fileName: fileName,
+    path: documentPath,
+    pathURI: doc.pathURI || "",
+    saved: !!documentPath,
+    modified: doc.canRevert(),
     width: doc.width,
     height: doc.height,
     frameRate: doc.frameRate,
@@ -802,6 +891,120 @@ if (doc) {
   
   fl.outputPanel.clear();
   fl.outputPanel.trace(JSON.stringify(info, null, 2));
+} else {
+  results.error = "No document is open";
+  fl.outputPanel.clear();
+  fl.outputPanel.trace("Error: No document is open");
+}
+
+// Write results to temp file
+var outputPath = "%%OUTPUT_FILE%%";
+FLfile.write(outputPath, JSON.stringify(results));
+`;
+  }
+
+  private jsfl_getProjectInfo(args: Record<string, any>): string {
+    return `${this.getJSONPolyfill()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+function getFileNameFromPath(path, fallbackName) {
+  if (!path) {
+    return fallbackName || "";
+  }
+
+  var normalizedPath = String(path).replace(/\\\\/g, "/");
+  var slashIndex = normalizedPath.lastIndexOf("/");
+  return slashIndex >= 0 ? normalizedPath.substring(slashIndex + 1) : normalizedPath;
+}
+
+function getDirectoryFromPath(path) {
+  if (!path) {
+    return "";
+  }
+
+  var normalizedPath = String(path).replace(/\\\\/g, "/");
+  var slashIndex = normalizedPath.lastIndexOf("/");
+  return slashIndex >= 0 ? normalizedPath.substring(0, slashIndex) : "";
+}
+
+function stripExtension(fileName) {
+  if (!fileName) {
+    return "";
+  }
+
+  var dotIndex = fileName.lastIndexOf(".");
+  return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+}
+
+function getExtension(fileName) {
+  if (!fileName) {
+    return "";
+  }
+
+  var dotIndex = fileName.lastIndexOf(".");
+  return dotIndex > 0 && dotIndex < fileName.length - 1 ? fileName.substring(dotIndex + 1) : "";
+}
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var documentName = doc.name || "Untitled";
+  var documentPath = doc.path || "";
+  var fileName = getFileNameFromPath(documentPath, documentName);
+  var projectName = stripExtension(fileName || documentName);
+  var libraryItems = doc.library ? doc.library.items : [];
+  var itemTypeCounts = {};
+  var openDocuments = [];
+
+  for (var i = 0; i < libraryItems.length; i++) {
+    var itemType = libraryItems[i].itemType || "unknown";
+    itemTypeCounts[itemType] = (itemTypeCounts[itemType] || 0) + 1;
+  }
+
+  if (fl.documents) {
+    for (var j = 0; j < fl.documents.length; j++) {
+      openDocuments.push({
+        name: fl.documents[j].name || "",
+        path: fl.documents[j].path || "",
+        current: fl.documents[j] === doc
+      });
+    }
+  }
+
+  var projectInfo = {
+    projectName: projectName,
+    documentName: documentName,
+    fileName: fileName,
+    extension: getExtension(fileName),
+    directory: getDirectoryFromPath(documentPath),
+    path: documentPath,
+    pathURI: doc.pathURI || "",
+    saved: !!documentPath,
+    modified: doc.canRevert(),
+    documentClass: doc.docClass || "",
+    dimensions: {
+      width: doc.width,
+      height: doc.height,
+      frameRate: doc.frameRate
+    },
+    timeline: {
+      currentFrame: timeline.currentFrame,
+      currentLayer: timeline.currentLayer,
+      layerCount: timeline.layerCount
+    },
+    library: {
+      totalItems: libraryItems.length,
+      itemTypeCounts: itemTypeCounts
+    },
+    openDocuments: openDocuments
+  };
+
+  results.success = true;
+  results.data = projectInfo;
+
+  fl.outputPanel.clear();
+  fl.outputPanel.trace("===== PROJECT INFORMATION =====");
+  fl.outputPanel.trace(JSON.stringify(projectInfo, null, 2));
 } else {
   results.error = "No document is open";
   fl.outputPanel.clear();
@@ -850,29 +1053,49 @@ if (doc) {
 
   // JSON polyfill for JSFL (older JavaScript engine without native JSON)
   private getJSONPolyfill(): string {
-    return `
-// JSON polyfill for JSFL
+    return String.raw`
+// Safe JSON.stringify for JSFL. Some Animate runtimes expose JSON but do not
+// escape Windows paths in a way Node can parse.
 if (typeof JSON === 'undefined') {
-  JSON = {
-    stringify: function(obj) {
+  JSON = {};
+}
+
+JSON.stringify = function(obj) {
+      function quoteString(value) {
+        return '"' + String(value)
+          .replace(/\\/g, "\\\\")
+          .replace(/"/g, '\\"')
+          .replace(/\r/g, "\\r")
+          .replace(/\n/g, "\\n")
+          .replace(/\t/g, "\\t")
+          .replace(/\f/g, "\\f")
+          .replace(/\x08/g, "\\b") + '"';
+      }
+
       var t = typeof obj;
-      if (t != "object" || obj === null) {
-        if (t == "string") return '"' + obj.replace(/"/g, '\\\\"') + '"';
+      if (obj === null) {
+        return "null";
+      }
+
+      if (t != "object") {
+        if (t == "string") return quoteString(obj);
+        if (t == "number" || t == "boolean") return String(obj);
+        if (t == "undefined" || t == "function") return "null";
         return String(obj);
       } else {
         var n, v, json = [], arr = (obj && obj.constructor == Array);
         for (n in obj) {
           v = obj[n];
           t = typeof v;
-          if (t == "string") v = '"' + v.replace(/"/g, '\\\\"') + '"';
-          else if (t == "object" && v !== null) v = JSON.stringify(v);
-          json.push((arr ? "" : '"' + n + '":') + String(v));
+          if (arr) {
+            json.push(JSON.stringify(v));
+          } else if (t != "undefined" && t != "function") {
+            json.push(quoteString(n) + ":" + JSON.stringify(v));
+          }
         }
-        return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}");
+        return (arr ? "[" : "{") + json.join(",") + (arr ? "]" : "}");
       }
-    }
-  };
-}
+    };
 `;
   }
 
