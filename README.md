@@ -129,6 +129,12 @@ Set up a game scene:
 Create layers named Background, Player, Enemies, UI, and Actions.
 ```
 
+Organize the timeline:
+
+```text
+Create a clean game timeline folder structure with Actions, UI, Player, Enemies, World, Background, and Audio folders.
+```
+
 Inspect the current project:
 
 ```text
@@ -191,6 +197,7 @@ Run custom JSFL that returns the current document name and layer count.
 | `clear_output_panel` | Clears the Adobe Animate output panel. |
 | `get_library_items` | Lists symbols, bitmaps, sounds, fonts, and other library items. |
 | `get_layers_info` | Returns detailed layer information. |
+| `get_timeline_tree` | Returns the timeline as folder/layer metadata. |
 | `select_layer_by_name` | Selects a layer by name. |
 | `add_actionscript_to_symbol_by_name` | Finds a named symbol instance and adds ActionScript. |
 
@@ -201,6 +208,66 @@ Run custom JSFL that returns the current document name and layer count.
 | `select_all` | Selects all elements on the current frame. |
 | `delete_selection` | Deletes the current selection. |
 | `run_custom_jsfl` | Runs custom JSFL for advanced workflows. |
+
+### Timeline Folder Organization
+
+| Tool | What It Does |
+| --- | --- |
+| `create_layer_folder` | Creates a timeline folder layer with optional placement, visibility, and lock settings. |
+| `create_timeline_folder_structure` | Creates a reusable folder/layer structure for game projects. |
+| `move_layer_to_folder` | Moves a layer into a folder block using Animate's timeline ordering APIs. |
+| `set_folder_expanded` | Expands or collapses one folder, or all folders with `folderName: "*"` |
+| `rename_layer_or_folder` | Renames an existing layer or folder by name. |
+| `delete_layer_or_folder` | Deletes a layer or folder, optionally including the folder's child layer block. |
+
+## Timeline Folder Workflow
+
+Timeline folders help keep a Flash or Animate game project readable. A clean game timeline might look like this:
+
+```text
+Actions
+  Frame Scripts
+  Labels
+UI
+  HUD
+  Menus
+  Text
+Player
+  Player Art
+  Player Hitbox
+  Player Effects
+Enemies
+  Enemy Art
+  Enemy Hitboxes
+  Enemy Effects
+World
+  Platforms
+  Pickups
+  Triggers
+Background
+  Sky
+  Backdrop
+  Parallax
+Audio
+  Music
+  SFX
+```
+
+You can ask the assistant to create that structure in one request:
+
+```text
+Create the default game timeline folder structure.
+```
+
+Then inspect it:
+
+```text
+Show me the timeline tree and tell me which layers have ActionScript.
+```
+
+The timeline tree response includes folder layers, child layers, visibility, lock state, frame counts, and whether each layer contains ActionScript.
+
+> Note: Adobe Animate's JSFL API exposes timeline layers mostly as a flat list. The MCP interprets folder membership as a folder block: the folder layer plus the following non-folder layers until the next folder. This matches the way the new folder tools create and organize game timelines.
 
 ## Project Metadata Capture
 

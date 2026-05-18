@@ -71,6 +71,171 @@ export class AnimateTools {
       },
     },
     {
+      name: "create_layer_folder",
+      description: "Create a timeline layer folder with optional placement and visibility/lock settings",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description: "Name of the timeline folder to create",
+          },
+          position: {
+            type: "number",
+            description: "Optional layer index to create the folder near",
+          },
+          addAbove: {
+            type: "boolean",
+            description: "If true, create above the position/current layer; if false, create below",
+            default: true,
+          },
+          visible: {
+            type: "boolean",
+            description: "Whether the folder should be visible",
+            default: true,
+          },
+          locked: {
+            type: "boolean",
+            description: "Whether the folder should be locked",
+            default: false,
+          },
+        },
+        required: ["name"],
+      },
+    },
+    {
+      name: "create_timeline_folder_structure",
+      description: "Create a game-friendly timeline folder structure with optional child layers under each folder",
+      inputSchema: {
+        type: "object",
+        properties: {
+          structure: {
+            type: "array",
+            description: "Optional custom structure. Each item has folderName and optional layers.",
+            items: {
+              type: "object",
+              properties: {
+                folderName: {
+                  type: "string",
+                  description: "Folder layer name",
+                },
+                layers: {
+                  type: "array",
+                  description: "Normal child layer names to create below the folder",
+                  items: {
+                    type: "string",
+                  },
+                },
+              },
+              required: ["folderName"],
+            },
+          },
+          addMissingOnly: {
+            type: "boolean",
+            description: "Skip folders/layers that already exist by name",
+            default: true,
+          },
+          expandFolders: {
+            type: "boolean",
+            description: "Expand created folders after creating the structure",
+            default: true,
+          },
+        },
+      },
+    },
+    {
+      name: "get_timeline_tree",
+      description: "Return the current timeline as structured folder/layer metadata",
+      inputSchema: {
+        type: "object",
+        properties: {},
+      },
+    },
+    {
+      name: "move_layer_to_folder",
+      description: "Move a timeline layer next to a folder so it becomes part of that folder block",
+      inputSchema: {
+        type: "object",
+        properties: {
+          layerName: {
+            type: "string",
+            description: "Name of the layer or folder to move",
+          },
+          folderName: {
+            type: "string",
+            description: "Name of the destination folder layer",
+          },
+          position: {
+            type: "string",
+            description: "Where to place the layer in the folder block: 'first' or 'last'",
+            default: "last",
+          },
+        },
+        required: ["layerName", "folderName"],
+      },
+    },
+    {
+      name: "set_folder_expanded",
+      description: "Expand or collapse a timeline folder, optionally applying recursively",
+      inputSchema: {
+        type: "object",
+        properties: {
+          folderName: {
+            type: "string",
+            description: "Name of the folder to expand or collapse. Use '*' for all folders.",
+          },
+          expanded: {
+            type: "boolean",
+            description: "True to expand, false to collapse",
+            default: true,
+          },
+          recursive: {
+            type: "boolean",
+            description: "Apply to nested folders as well",
+            default: false,
+          },
+        },
+        required: ["folderName"],
+      },
+    },
+    {
+      name: "rename_layer_or_folder",
+      description: "Rename a timeline layer or folder by its current name",
+      inputSchema: {
+        type: "object",
+        properties: {
+          currentName: {
+            type: "string",
+            description: "Current layer or folder name",
+          },
+          newName: {
+            type: "string",
+            description: "New layer or folder name",
+          },
+        },
+        required: ["currentName", "newName"],
+      },
+    },
+    {
+      name: "delete_layer_or_folder",
+      description: "Delete a timeline layer or folder by name, optionally deleting its folder block contents",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description: "Name of the layer or folder to delete",
+          },
+          includeContents: {
+            type: "boolean",
+            description: "For folder layers, delete the folder and the following layers in its folder block",
+            default: false,
+          },
+        },
+        required: ["name"],
+      },
+    },
+    {
       name: "draw_rectangle",
       description: "Draw a rectangle on the stage at specified coordinates",
       inputSchema: {
@@ -516,6 +681,20 @@ export class AnimateTools {
         return this.jsfl_saveDocument(args);
       case "add_layer":
         return this.jsfl_addLayer(args);
+      case "create_layer_folder":
+        return this.jsfl_createLayerFolder(args);
+      case "create_timeline_folder_structure":
+        return this.jsfl_createTimelineFolderStructure(args);
+      case "get_timeline_tree":
+        return this.jsfl_getTimelineTree(args);
+      case "move_layer_to_folder":
+        return this.jsfl_moveLayerToFolder(args);
+      case "set_folder_expanded":
+        return this.jsfl_setFolderExpanded(args);
+      case "rename_layer_or_folder":
+        return this.jsfl_renameLayerOrFolder(args);
+      case "delete_layer_or_folder":
+        return this.jsfl_deleteLayerOrFolder(args);
       case "draw_rectangle":
         return this.jsfl_drawRectangle(args);
       case "draw_oval":
@@ -664,6 +843,433 @@ if (doc) {
   fl.outputPanel.clear();
   fl.outputPanel.trace("Error: No document is open");
 }
+`;
+  }
+
+  private getTimelineFolderHelpers(): string {
+    return String.raw`
+function findLayerIndexByName(timeline, layerName) {
+  for (var i = 0; i < timeline.layerCount; i++) {
+    if (timeline.layers[i].name === layerName) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+function getLayerHasActionScript(layer) {
+  if (!layer || !layer.frames) {
+    return false;
+  }
+
+  for (var i = 0; i < layer.frames.length; i++) {
+    if (layer.frames[i].actionScript && layer.frames[i].actionScript.length > 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getLayerSummary(timeline, index) {
+  var layer = timeline.layers[index];
+  return {
+    index: index,
+    name: layer.name,
+    type: layer.layerType,
+    isFolder: layer.layerType === "folder",
+    visible: layer.visible,
+    locked: layer.locked,
+    frameCount: layer.frameCount,
+    outline: layer.outline,
+    color: layer.color,
+    hasActionScript: getLayerHasActionScript(layer)
+  };
+}
+
+function getFolderRange(timeline, folderIndex) {
+  var endIndex = folderIndex;
+
+  for (var i = folderIndex + 1; i < timeline.layerCount; i++) {
+    if (timeline.layers[i].layerType === "folder") {
+      break;
+    }
+    endIndex = i;
+  }
+
+  return {
+    startIndex: folderIndex,
+    endIndex: endIndex,
+    childCount: Math.max(0, endIndex - folderIndex)
+  };
+}
+
+function buildTimelineTree(timeline) {
+  var tree = {
+    totalLayers: timeline.layerCount,
+    currentLayer: timeline.currentLayer,
+    treeModel: "folder-blocks",
+    note: "Adobe JSFL exposes timeline layers as a flat list. Folder children are interpreted as the following non-folder layers until the next folder layer.",
+    layers: [],
+    folders: []
+  };
+  var currentFolder = null;
+
+  for (var i = 0; i < timeline.layerCount; i++) {
+    var layerData = getLayerSummary(timeline, i);
+    tree.layers.push(layerData);
+
+    if (layerData.isFolder) {
+      currentFolder = layerData;
+      currentFolder.children = [];
+      currentFolder.range = getFolderRange(timeline, i);
+      tree.folders.push(currentFolder);
+    } else if (currentFolder) {
+      currentFolder.children.push(layerData);
+      layerData.folderName = currentFolder.name;
+    }
+  }
+
+  return tree;
+}
+
+function writeTimelineResult(results) {
+  fl.outputPanel.clear();
+  fl.outputPanel.trace(JSON.stringify(results.data || results.error, null, 2));
+  var outputPath = "%%OUTPUT_FILE%%";
+  FLfile.write(outputPath, JSON.stringify(results));
+}
+`;
+  }
+
+  private jsfl_createLayerFolder(args: Record<string, any>): string {
+    const name = args.name;
+    const hasPosition = typeof args.position === "number";
+    const position = hasPosition ? args.position : 0;
+    const addAbove = args.addAbove !== false;
+    const visible = args.visible !== false;
+    const locked = args.locked === true;
+
+    return `${this.getJSONPolyfill()}
+${this.getTimelineFolderHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var folderName = ${JSON.stringify(name)};
+  var existingIndex = findLayerIndexByName(timeline, folderName);
+
+  if (existingIndex !== -1) {
+    results.error = "Layer or folder '" + folderName + "' already exists";
+    results.data = { existingIndex: existingIndex, timeline: buildTimelineTree(timeline) };
+  } else {
+    if (${hasPosition}) {
+      timeline.currentLayer = Math.max(0, Math.min(${position}, timeline.layerCount - 1));
+    }
+
+    var folderIndex = timeline.addNewLayer(folderName, "folder", ${addAbove});
+    timeline.layers[folderIndex].visible = ${visible};
+    timeline.layers[folderIndex].locked = ${locked};
+    timeline.expandFolder(true, false, folderIndex);
+
+    results.success = true;
+    results.data = {
+      folderName: folderName,
+      folderIndex: folderIndex,
+      created: true,
+      timeline: buildTimelineTree(timeline)
+    };
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeTimelineResult(results);
+`;
+  }
+
+  private jsfl_createTimelineFolderStructure(args: Record<string, any>): string {
+    const defaultStructure = [
+      { folderName: "Actions", layers: ["Frame Scripts", "Labels"] },
+      { folderName: "UI", layers: ["HUD", "Menus", "Text"] },
+      { folderName: "Player", layers: ["Player Art", "Player Hitbox", "Player Effects"] },
+      { folderName: "Enemies", layers: ["Enemy Art", "Enemy Hitboxes", "Enemy Effects"] },
+      { folderName: "World", layers: ["Platforms", "Pickups", "Triggers"] },
+      { folderName: "Background", layers: ["Sky", "Backdrop", "Parallax"] },
+      { folderName: "Audio", layers: ["Music", "SFX"] },
+    ];
+    const structure = Array.isArray(args.structure) && args.structure.length > 0 ? args.structure : defaultStructure;
+    const addMissingOnly = args.addMissingOnly !== false;
+    const expandFolders = args.expandFolders !== false;
+
+    return `${this.getJSONPolyfill()}
+${this.getTimelineFolderHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+var structure = ${JSON.stringify(structure)};
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var createdFolders = [];
+  var createdLayers = [];
+  var skipped = [];
+
+  for (var i = 0; i < structure.length; i++) {
+    var folderName = structure[i].folderName;
+    var childLayers = structure[i].layers || [];
+    var folderIndex = findLayerIndexByName(timeline, folderName);
+
+    if (folderIndex === -1) {
+      if (timeline.layerCount > 0) {
+        timeline.currentLayer = timeline.layerCount - 1;
+      }
+      folderIndex = timeline.addNewLayer(folderName, "folder", false);
+      createdFolders.push({ name: folderName, index: folderIndex });
+    } else if (${addMissingOnly}) {
+      skipped.push({ name: folderName, reason: "already exists" });
+    }
+
+    timeline.currentLayer = folderIndex;
+
+    for (var j = 0; j < childLayers.length; j++) {
+      var childName = childLayers[j];
+      if (${addMissingOnly} && findLayerIndexByName(timeline, childName) !== -1) {
+        skipped.push({ name: childName, reason: "already exists" });
+        continue;
+      }
+
+      var childIndex = timeline.addNewLayer(childName, "normal", false);
+      createdLayers.push({ name: childName, index: childIndex, folderName: folderName });
+      timeline.currentLayer = childIndex;
+    }
+
+    if (${expandFolders}) {
+      var currentFolderIndex = findLayerIndexByName(timeline, folderName);
+      if (currentFolderIndex !== -1) {
+        timeline.expandFolder(true, true, currentFolderIndex);
+      }
+    }
+  }
+
+  results.success = true;
+  results.data = {
+    createdFolders: createdFolders,
+    createdLayers: createdLayers,
+    skipped: skipped,
+    timeline: buildTimelineTree(timeline)
+  };
+} else {
+  results.error = "No document is open";
+}
+
+writeTimelineResult(results);
+`;
+  }
+
+  private jsfl_getTimelineTree(args: Record<string, any>): string {
+    return `${this.getJSONPolyfill()}
+${this.getTimelineFolderHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  results.success = true;
+  results.data = buildTimelineTree(timeline);
+} else {
+  results.error = "No document is open";
+}
+
+writeTimelineResult(results);
+`;
+  }
+
+  private jsfl_moveLayerToFolder(args: Record<string, any>): string {
+    const layerName = args.layerName;
+    const folderName = args.folderName;
+    const position = args.position === "first" ? "first" : "last";
+
+    return `${this.getJSONPolyfill()}
+${this.getTimelineFolderHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var layerName = ${JSON.stringify(layerName)};
+  var folderName = ${JSON.stringify(folderName)};
+  var layerIndex = findLayerIndexByName(timeline, layerName);
+  var folderIndex = findLayerIndexByName(timeline, folderName);
+
+  if (layerIndex === -1) {
+    results.error = "Layer '" + layerName + "' not found";
+  } else if (folderIndex === -1) {
+    results.error = "Folder '" + folderName + "' not found";
+  } else if (timeline.layers[folderIndex].layerType !== "folder") {
+    results.error = "'" + folderName + "' exists but is not a folder layer";
+  } else if (layerIndex === folderIndex) {
+    results.error = "A folder cannot be moved into itself";
+  } else {
+    var range = getFolderRange(timeline, folderIndex);
+    var targetIndex = "${position}" === "first" ? folderIndex : range.endIndex;
+    timeline.reorderLayer(layerIndex, targetIndex, false);
+
+    var newLayerIndex = findLayerIndexByName(timeline, layerName);
+    var newFolderIndex = findLayerIndexByName(timeline, folderName);
+    timeline.expandFolder(true, false, newFolderIndex);
+
+    results.success = true;
+    results.data = {
+      layerName: layerName,
+      folderName: folderName,
+      position: "${position}",
+      oldLayerIndex: layerIndex,
+      newLayerIndex: newLayerIndex,
+      note: "Layer folder membership is represented by timeline order in JSFL; this tool moves the layer into the folder block.",
+      timeline: buildTimelineTree(timeline)
+    };
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeTimelineResult(results);
+`;
+  }
+
+  private jsfl_setFolderExpanded(args: Record<string, any>): string {
+    const folderName = args.folderName;
+    const expanded = args.expanded !== false;
+    const recursive = args.recursive === true;
+
+    return `${this.getJSONPolyfill()}
+${this.getTimelineFolderHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var folderName = ${JSON.stringify(folderName)};
+
+  if (folderName === "*") {
+    timeline.expandFolder(${expanded}, true, -1);
+    results.success = true;
+    results.data = {
+      folderName: "*",
+      expanded: ${expanded},
+      recursive: true,
+      timeline: buildTimelineTree(timeline)
+    };
+  } else {
+    var folderIndex = findLayerIndexByName(timeline, folderName);
+    if (folderIndex === -1) {
+      results.error = "Folder '" + folderName + "' not found";
+    } else if (timeline.layers[folderIndex].layerType !== "folder") {
+      results.error = "'" + folderName + "' exists but is not a folder layer";
+    } else {
+      timeline.expandFolder(${expanded}, ${recursive}, folderIndex);
+      results.success = true;
+      results.data = {
+        folderName: folderName,
+        folderIndex: folderIndex,
+        expanded: ${expanded},
+        recursive: ${recursive},
+        timeline: buildTimelineTree(timeline)
+      };
+    }
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeTimelineResult(results);
+`;
+  }
+
+  private jsfl_renameLayerOrFolder(args: Record<string, any>): string {
+    const currentName = args.currentName;
+    const newName = args.newName;
+
+    return `${this.getJSONPolyfill()}
+${this.getTimelineFolderHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var currentName = ${JSON.stringify(currentName)};
+  var newName = ${JSON.stringify(newName)};
+  var layerIndex = findLayerIndexByName(timeline, currentName);
+  var duplicateIndex = findLayerIndexByName(timeline, newName);
+
+  if (layerIndex === -1) {
+    results.error = "Layer or folder '" + currentName + "' not found";
+  } else if (duplicateIndex !== -1) {
+    results.error = "Layer or folder '" + newName + "' already exists";
+  } else {
+    var oldType = timeline.layers[layerIndex].layerType;
+    timeline.layers[layerIndex].name = newName;
+    results.success = true;
+    results.data = {
+      oldName: currentName,
+      newName: newName,
+      layerIndex: layerIndex,
+      type: oldType,
+      timeline: buildTimelineTree(timeline)
+    };
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeTimelineResult(results);
+`;
+  }
+
+  private jsfl_deleteLayerOrFolder(args: Record<string, any>): string {
+    const name = args.name;
+    const includeContents = args.includeContents === true;
+
+    return `${this.getJSONPolyfill()}
+${this.getTimelineFolderHelpers()}
+var doc = fl.getDocumentDOM();
+var results = { success: false, data: null, error: null };
+
+if (doc) {
+  var timeline = doc.getTimeline();
+  var layerName = ${JSON.stringify(name)};
+  var layerIndex = findLayerIndexByName(timeline, layerName);
+  var deleted = [];
+
+  if (layerIndex === -1) {
+    results.error = "Layer or folder '" + layerName + "' not found";
+  } else {
+    var targetLayer = timeline.layers[layerIndex];
+    if (targetLayer.layerType === "folder" && ${includeContents}) {
+      var range = getFolderRange(timeline, layerIndex);
+      for (var i = range.endIndex; i >= range.startIndex; i--) {
+        deleted.push({ name: timeline.layers[i].name, index: i, type: timeline.layers[i].layerType });
+        timeline.deleteLayer(i);
+      }
+    } else {
+      deleted.push({ name: targetLayer.name, index: layerIndex, type: targetLayer.layerType });
+      timeline.deleteLayer(layerIndex);
+    }
+
+    results.success = true;
+    results.data = {
+      deleted: deleted,
+      includeContents: ${includeContents},
+      timeline: buildTimelineTree(timeline)
+    };
+  }
+} else {
+  results.error = "No document is open";
+}
+
+writeTimelineResult(results);
 `;
   }
 
